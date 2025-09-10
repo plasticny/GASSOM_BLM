@@ -142,6 +142,7 @@ classdef environment < handle
             gfb = gammatoneFilterBank([100 22000],param.nCh,44100);
             gmtL = gfb(bi(:,1));
             gmtR = gfb(bi(:,2));
+
             global patchLength patchStride;
             frmL = []; frmR = [];
             for i=0:patchStride:length(bi)-patchLength
@@ -152,6 +153,7 @@ classdef environment < handle
             frmL = frmL';
             frmR = frmR';
             nFrm = size(frmL,2);
+
             global blockLength blockShift;
             blockL = []; blockR = [];
             for i=0:blockShift:nFrm-blockLength
@@ -162,6 +164,28 @@ classdef environment < handle
             end
             nFrm = size(blockL,2);            
         end
+
+        function [frmL, frmR, nFrm] = genOneEpisodeCochIOSR (this, param, ind)
+            y_all = this.timit_train{param.audio_idx(ind),1};
+            y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
+            
+            bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
+            
+            frmL = audio2cochlIOSR(...
+                bi(:,1), ...
+                this.fs, 100, 20000, 128, ...
+                8, 4 ...
+            );
+            frmR = audio2cochlIOSR(...
+                bi(:,2), ...
+                this.fs, 100, 20000, 128, ...
+                8, 4 ...
+            );
+            nFrm = size(frmL, 2);
+
+            assert(nFrm == size(frmR, 2));
+        end
+
         function [blockL,blockR,nFrm] = genOneEpisodeRM(this,param,ind)
             y_all = this.timit_train{param.audio_idx(ind),1};
             y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));

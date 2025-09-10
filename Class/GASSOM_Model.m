@@ -57,7 +57,7 @@ classdef GASSOM_Model < handle
             this.somTrainParam.subject = 0;
             this.somTrainParam.max_iter = this.max_iter;
             this.somTrainParam.locs_rand = randi(this.locs_num,this.max_iter,1);  
-            this.somTrainParam.audio_dur = 400e-3;
+            this.somTrainParam.audio_dur = 200e-3;
             this.somTrainParam.audio_len = round(this.somTrainParam.audio_dur*this.fs);
 %             this.somTrainParam.audio_idx = randi(length(this.env.timit_train),this.max_iter,1);
             this.somTrainParam.audio_idx = genRandInd(this.env.timit_train(:,2),this.max_iter);
@@ -98,7 +98,8 @@ classdef GASSOM_Model < handle
         
         function initGASSOM(this)
             this.gsm = cell(3,1);
-            init_gsm_param = {[1 this.patch_len],this.topo_space,this.max_iter};   
+            % init_gsm_param = {[1 this.patch_len],this.topo_space,this.max_iter};   
+            init_gsm_param = {[1 128*5],this.topo_space,this.max_iter};
             this.gsm{1} = GASSOM_Online(init_gsm_param);
             this.gsm{2} = GASSOM_Online_S(init_gsm_param);
             this.gsm{3} = GASSOM_Online_S(init_gsm_param);
@@ -167,8 +168,13 @@ classdef GASSOM_Model < handle
         end
                                 
         function encodeGASSOM(this,XL,XR)
-            this.gsm{1}.assomEncode([XL;XR]);
-            this.gsm{1}.updateBasis([XL;XR]);  
+            % this.gsm{1}.assomEncode([XL;XR]);
+            % this.gsm{1}.updateBasis([XL;XR]);
+
+            X = reshape([XL XR],[],1);
+            this.gsm{1}.assomEncode(X);
+            this.gsm{1}.updateBasis(X);  
+
             if ~this.binaural_only_flag
                 this.gsm{2}.assomEncode(XL);
                 this.gsm{2}.updateBasis(XL);
@@ -259,6 +265,50 @@ classdef GASSOM_Model < handle
                 frmR = rm(single_len+1:end,:);
                 this.encodeGASSOM(frmL,frmR);
                 upd_som(i_tg);
+            end
+        end
+
+        function trainGASSOM_cochleagram_IOSR (this)
+            % same as trainGASSOM_cochleagram, train gassom with cochleagram input
+            % but use function from IOSR to get the cochleagram
+            this.somTrainParam.input_type = 'timit';
+            upd_som = textprogressbar(...
+                this.max_iter, 'showremtime', true ...
+            );
+
+            chunk_size = 5;
+            chunk_shift = 1;
+
+            i_tg = 1;
+            while i_tg <= this.max_iter
+                [frmL,frmR,~] = this.env.genOneEpisodeCochIOSR(this.somTrainParam,i_tg);
+                single_len = size(frmL,1);
+                rm = normalize([frmL;frmR]);
+                frmL = rm(1:single_len,:);
+                frmR = rm(single_len+1:end,:);
+
+                nFrm = size(frmL, 2);
+                assert(nFrm == size(frmR, 2));
+
+                % chkIdx = 0:chunk_shift:nFrm-chunk_size;
+                % j = chkIdx(randi(length(chkIdx)));
+                % chkL = frmL(:,j+(1:chunk_size));
+                % chkR = frmR(:,j+(1:chunk_size));
+                % this.encodeGASSOM(chkL,chkR);
+
+                % i_tg = i_tg + 1;
+                % upd_som(i_tg);
+
+                for j = 0:chunk_shift:nFrm-chunk_size
+                    chkL = frmL(:,j+(1:chunk_size));
+                    chkR = frmR(:,j+(1:chunk_size));
+                    this.encodeGASSOM(chkL,chkR);
+                    i_tg = i_tg + 1;
+                    upd_som(i_tg);
+                    if i_tg > this.max_iter
+                        break;
+                    end
+                end
             end
         end
         
