@@ -52,7 +52,8 @@ classdef GASSOM_Online  < handle
             obj.dim_patch = [obj.dim_patch_single 2];
             obj.n_subspace = prod(obj.topo_subspace);       
             obj.length_basis = prod(obj.dim_patch);           
-            obj.size_subspace = 2;
+            % obj.size_subspace = 2;
+            obj.size_subspace = 1;
             obj.n_basis = obj.size_subspace * obj.n_subspace;                
             
             obj.sigmaTrans = 2.25;
@@ -61,18 +62,20 @@ classdef GASSOM_Online  < handle
             obj.sigma_n = 0.2;
             obj.sigma_w = 2;
             
-            % obj.alpha_A = 1; % magnitude
+            % obj.alpha_A = 10; % magnitude
             % obj.alpha_C = 1e-3;
             obj.alpha_A = 8e-4; % magnitude
             obj.alpha_C = 1e-5;
 
             % obj.sigma_A = 2;
             % obj.sigma_C = .1;
+            % obj.sigma_A = 2;
             obj.sigma_A = 2;
             obj.sigma_C = .2;
 
-            % obj.tconst = 8000;         
-            obj.tconst = 10000;
+            % obj.tconst = 10000;         
+            % obj.tconst = 10000;
+            obj.tconst = 40000;
             
             obj.transProb =  genTransProbG(obj.topo_subspace,obj.sigmaTrans, obj.alphaTrans,0); 
             np = rand(obj.n_subspace,1);    
@@ -84,7 +87,7 @@ classdef GASSOM_Online  < handle
             A = randn(obj.length_basis, obj.size_subspace, obj.n_subspace);
             A = orthonormalize_subspace (A);
             obj.bases{1}= squeeze(A(:,1,:));
-            obj.bases{2}= squeeze(A(:,2,:));
+            % obj.bases{2}= squeeze(A(:,2,:));
 
             %     save(save_name,'A','np');
             % else
@@ -106,20 +109,14 @@ classdef GASSOM_Online  < handle
             batch_size = size(X,2);
 
             this.coef{1} = this.bases{1}'*X; %[n_subspace batch_size]
-            this.coef{2} = this.bases{2}'*X;
+            % this.coef{2} = this.bases{2}'*X;
 
-            % disp(max(this.coef{1}));
-            % disp(min(this.coef{1}));
-
-            % disp(max(this.coef{2}));
-            % disp(min(this.coef{2}));
-
-            this.Proj = this.coef{1}.^2 + this.coef{2}.^2; %P[n_subspace,batch_size]
+            % this.Proj = this.coef{1}.^2 + this.coef{2}.^2; %P[n_subspace,batch_size]
+            this.Proj = this.coef{1}.^2;
             this.Proj = this.Proj./max(this.Proj);
 
             % disp(max(this.Proj, [], "all"));
             assert(max(this.Proj, [], "all") <= 1);
-            % assert(false);
             
             Perr = ones(size(this.Proj))-this.Proj;
             emissProb=exp(-this.Proj/(2*this.sigma_w^2)).*exp(-Perr/(2*this.sigma_n^2));      
@@ -139,12 +136,14 @@ classdef GASSOM_Online  < handle
         function [resp] = getResponse(this,X,ind)
             if nargin<3
                 coef1 = this.bases{1}'*X;
-                coef2 = this.bases{2}'*X;
-                resp = coef1.^2 + coef2.^2;
+                % coef2 = this.bases{2}'*X;
+                % resp = coef1.^2 + coef2.^2;
+                resp = coef1.^2;
             else
                 coef1 = this.bases{1}(:,ind)'*X;
-                coef2 = this.bases{2}(:,ind)'*X;
-                resp = coef1.^2 + coef2.^2;
+                % coef2 = this.bases{2}(:,ind)'*X;
+                % resp = coef1.^2 + coef2.^2;
+                resp = coef1.^2;
             end
         end
 
@@ -183,20 +182,21 @@ classdef GASSOM_Online  < handle
             n_const = 1./(sqrt(this.Proj)+eps);
             weights = func_h.*n_const;
             w_c{1} =weights.*this.coef{1};
-            w_c{2} =weights.*this.coef{2};
+            % w_c{2} =weights.*this.coef{2};
             
             winput{1} = X*w_c{1}';
-            winput{2} = X*w_c{2}';
+            % winput{2} = X*w_c{2}';
             
-            diff{1} =  winput{1}-bsxfun(@times,this.bases{1},sum(w_c{1}.*this.coef{1},2)')-bsxfun(@times,this.bases{2},sum(w_c{1}.*this.coef{2},2)');
-            diff{2} =  winput{2}-bsxfun(@times,this.bases{1},sum(w_c{2}.*this.coef{1},2)')-bsxfun(@times,this.bases{2},sum(w_c{2}.*this.coef{2},2)');
+            % diff{1} =  winput{1}-bsxfun(@times,this.bases{1},sum(w_c{1}.*this.coef{1},2)')-bsxfun(@times,this.bases{2},sum(w_c{1}.*this.coef{2},2)');
+            % diff{2} =  winput{2}-bsxfun(@times,this.bases{1},sum(w_c{2}.*this.coef{1},2)')-bsxfun(@times,this.bases{2},sum(w_c{2}.*this.coef{2},2)');
+            diff{1} =  winput{1}-bsxfun(@times,this.bases{1},sum(w_c{1}.*this.coef{1},2)');
            
             Bases{1} = this.bases{1} +alpha*diff{1};
-            Bases{2} = this.bases{2} +alpha*diff{2};
+            % Bases{2} = this.bases{2} +alpha*diff{2};
 
             this.bases{1} = bsxfun(@rdivide, Bases{1}, sqrt(sum(Bases{1}.^2)));
-            Bases{2} = Bases{2} - bsxfun(@times,this.bases{1}, sum(this.bases{1}.*Bases{2}));
-            this.bases{2} = bsxfun(@rdivide, Bases{2}, sqrt(sum(Bases{2}.^2)));            
+            % Bases{2} = Bases{2} - bsxfun(@times,this.bases{1}, sum(this.bases{1}.*Bases{2}));
+            % this.bases{2} = bsxfun(@rdivide, Bases{2}, sqrt(sum(Bases{2}.^2)));            
             
             this.iter = this.iter+1; 
             this.updatecount = this.updatecount+1;
