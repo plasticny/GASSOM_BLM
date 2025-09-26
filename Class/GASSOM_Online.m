@@ -70,8 +70,8 @@ classdef GASSOM_Online  < handle
             % obj.sigma_A = 2;
             % obj.sigma_C = .1;
             % obj.sigma_A = 2;
-            obj.sigma_A = 2;
-            obj.sigma_C = .2;
+            obj.sigma_A = 4;
+            obj.sigma_C = .4;
 
             % obj.tconst = 10000;         
             % obj.tconst = 10000;

@@ -101,7 +101,7 @@ classdef GASSOM_Model < handle
         function initGASSOM(this)
             this.gsm = cell(3,1);
             % init_gsm_param = {[1 this.patch_len],this.topo_space,this.max_iter};   
-            init_gsm_param = {[1 128*10],this.topo_space,this.max_iter};
+            init_gsm_param = {[1 128*20],this.topo_space,this.max_iter};
             this.gsm{1} = GASSOM_Online(init_gsm_param);
             this.gsm{2} = GASSOM_Online_S(init_gsm_param);
             this.gsm{3} = GASSOM_Online_S(init_gsm_param);
@@ -273,9 +273,10 @@ classdef GASSOM_Model < handle
             % same as trainGASSOM_cochleagram, train gassom with cochleagram input
             % but use function from IOSR to get the cochleagram
             this.somTrainParam.input_type = 'timit';
-            upd_som = textprogressbar(...
-                this.max_iter, 'showremtime', true ...
-            );
+            % upd_som = textprogressbar(...
+            %     this.max_iter, 'showremtime', true ...
+            % );
+            upd_som = textprogressbar(this.max_iter);
 
             gsmMapShotVideoMaker = gassomMapVideoMaker('chp4_result/timeshot', chunk_size);
             gsmMapShotVideoMaker.open();
@@ -338,8 +339,9 @@ classdef GASSOM_Model < handle
                     gsmMapShotVideoMaker.addGassomMapFrame(this);
                 end
 
-                i_tg = i_tg + 1;
+                % disp(i_tg);
                 upd_som(i_tg);
+                i_tg = i_tg + 1;
             end
 
             gsmMapShotVideoMaker.close()

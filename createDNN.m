@@ -25,8 +25,36 @@ switch net_no
             softmaxLayer('Name','Softmax Layer');
             classificationLayer('Name','Output Layer');
             ];
+    case 3
+        net = [
+            featureInputLayer(input_size, "Normalization", "zscore", "Name", "Input Layer");
+            fullyConnectedLayer(200, "Name", "fc1");
+            reluLayer;
+            dropoutLayer(0.2);
+            fullyConnectedLayer(200, "Name", "fc2");
+            reluLayer;
+            dropoutLayer(0.2);
+            fullyConnectedLayer(50, "Name", "fc3");
+            reluLayer;
+            dropoutLayer(0.2);
+            fullyConnectedLayer(output_size, "Name", "fc ouput");
+            softmaxLayer("Name", "Softmax layer");
+            classificationLayer("Name", "output layer");
+        ]
 end
 
-options = trainingOptions('sgdm','InitialLearnRate',0.1,'LearnRateDropFactor',0.1,'ExecutionEnvironment','cpu',...
-    'Shuffle','once','MaxEpochs',10);
+switch net_no
+    case {1, 2}
+        options = trainingOptions('sgdm','InitialLearnRate',0.1,'LearnRateDropFactor',0.1,'ExecutionEnvironment','cpu',...
+            'Shuffle','once','MaxEpochs',10);
+    case 3
+        options = trainingOptions(...
+            "sgdm",...
+            "InitialLearnRate", 0.1,...
+            "LearnRateDropFactor", 0.1,...
+            "LearnRateDropPeriod", 10,...
+            "Shuffle", "every-epoch", ...
+            "MaxEpochs", 20 ...
+        );
+end
 end        
