@@ -1,2 +1,11 @@
 *.mat
 *.mexa64
+*.png
+*.avi
+*.asv
+*.pdf
+*.odp
+dev.m
+
+chp4/cochleagram/result
+chp4/waveform/result

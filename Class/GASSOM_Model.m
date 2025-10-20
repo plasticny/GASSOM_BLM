@@ -26,15 +26,23 @@ classdef GASSOM_Model < handle
         somTrainParam;
         netTrainParam;
         netTestParam;
+
+        % by peter, for avoiding changing the logic of patch_dur
+        dim_patch;
     end
     
     methods
-        function this = GASSOM_Model(PARAM)
+        % inputType: 'waveform' / 'cochleagram'
+        function this = GASSOM_Model(PARAM, dim_patch, inputType)
+            assert(inputType == "waveform" || inputType == "cochleagram");
+
             if ~exist('temp_data','dir'), mkdir('temp_data'); end
             this.fs = PARAM{1};                        
             this.patch_dur = PARAM{2};
             this.topo_space = PARAM{3};
-            this.max_iter = PARAM{4};            
+            this.max_iter = PARAM{4};  
+            
+            this.dim_patch = dim_patch;
             
             % default locations
 %             this.azim_list = 0:10:350;
@@ -45,7 +53,7 @@ classdef GASSOM_Model < handle
             this.locs_num = length(this.locs_list);
             
             % initialize GASSOMs                  
-            this.inputType = 'waveform'; % or 'spectrogram'
+            this.inputType = inputType;
             this.binaural_only_flag = true;
             this.initEnv;
             this.loadEnvData;
@@ -101,8 +109,12 @@ classdef GASSOM_Model < handle
         function initGASSOM(this)
             this.gsm = cell(3,1);
             % init_gsm_param = {[1 this.patch_len],this.topo_space,this.max_iter};   
-            init_gsm_param = {[1 128*20],this.topo_space,this.max_iter};
-            this.gsm{1} = GASSOM_Online(init_gsm_param);
+            init_gsm_param = {[1 this.dim_patch],this.topo_space,this.max_iter};
+            if this.inputType == "waveform"
+                this.gsm{1} = GASSOM_Online_Waveform(init_gsm_param);
+            elseif this.inputType == "cochleagram"
+                this.gsm{1} = GASSOM_Online_Cochleagram(init_gsm_param);
+            end
             this.gsm{2} = GASSOM_Online_S(init_gsm_param);
             this.gsm{3} = GASSOM_Online_S(init_gsm_param);
         end
@@ -231,7 +243,9 @@ classdef GASSOM_Model < handle
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function trainGASSOM_timit(this)
             this.somTrainParam.input_type = 'timit';
-            upd_som = textprogressbar(this.max_iter);
+            upd_som = textprogressbar(...
+                this.max_iter, 'showremtime', true ...
+            );
             for i_tg = 1:this.max_iter                
                 [frmL,frmR] = this.env.genOneEpisode(this.somTrainParam,i_tg);
 %                 [frmL,frmR] = this.env.genOneEpisodeGWN(this.somTrainParam,this.env.locs_list(:,this.somTrainParam.locs_rand(i_tg)));
@@ -240,6 +254,42 @@ classdef GASSOM_Model < handle
             end
         end
 
+        function [winner_count] = trainGASSOM_timit2 (this)
+            this.somTrainParam.input_type = 'timit';
+            upd_som = textprogressbar(this.max_iter);
+
+            gsmMapShotVideoMaker = gassomMapVideoMaker('temp_data/timeshot', "waveform");
+            gsmMapShotVideoMaker.open();
+
+            winner_count = zeros(this.gsm{1}.n_subspace,1);
+
+            for i_tg = 1:this.max_iter                
+                [frmL,frmR] = this.env.genOneEpisode(this.somTrainParam,i_tg);
+
+                % frmL = frmL(:,1:53);
+                % frmR = frmR(:,1:53);
+
+                % chkIdx = 1:1:size(frmL,2);
+                % j = chkIdx(randi(length(chkIdx)));
+
+                % chkL = frmL(:,j);
+                % chkR = frmR(:,j);
+
+                this.encodeGASSOM(frmL,frmR);
+
+                for iw = this.gsm{1}.winners
+                    winner_count(iw) = winner_count(iw)+1;
+                end
+
+                if i_tg == 1 || mod(i_tg, 1000) == 0
+                    gsmMapShotVideoMaker.addGassomMapFrame(this);
+                end
+
+                upd_som(i_tg);
+            end
+
+            gsmMapShotVideoMaker.close()
+        end
             
         function trainGASSOM_timit_Coch(this)
             this.somTrainParam.input_type = 'timit';
@@ -273,9 +323,6 @@ classdef GASSOM_Model < handle
             % same as trainGASSOM_cochleagram, train gassom with cochleagram input
             % but use function from IOSR to get the cochleagram
             this.somTrainParam.input_type = 'timit';
-            % upd_som = textprogressbar(...
-            %     this.max_iter, 'showremtime', true ...
-            % );
             upd_som = textprogressbar(this.max_iter);
 
             gsmMapShotVideoMaker = gassomMapVideoMaker('chp4_result/timeshot', chunk_size);
@@ -287,16 +334,7 @@ classdef GASSOM_Model < handle
 
             i_tg = 1;
             while i_tg <= this.max_iter
-                [frmL,frmR,~] = this.env.genOneEpisodeCochIOSR(this.somTrainParam,i_tg);
-
-                % single_len = size(frmL,1);
-                % rm = normalize([frmL;frmR]);
-                % frmL = rm(1:single_len,:);
-                % frmR = rm(single_len+1:end,:);
-
-                % nm = norm([frmL;frmR]);
-                % frmL = frmL./nm;
-                % frmR = frmR./nm;
+                [frmL,frmR,~] = this.env.genOneTrainEpisodeCochIOSR(this.somTrainParam,i_tg);
 
                 nFrm = size(frmL, 2);
                 assert(nFrm == size(frmR, 2));
@@ -318,18 +356,6 @@ classdef GASSOM_Model < handle
                 XL(:,1) = reshape(frmL, [], 1);
                 XR(:,1) = reshape(frmR, [], 1);
 
-                % nm = norm([XL;XR]);
-                % XL = XL/nm;
-                % XR = XR/nm;
-
-                % chkIdx = 0:chunk_shift:nFrm-chunk_size;
-                % XL = ones(128*5, length(chkIdx));
-                % XR = ones(128*5, length(chkIdx));
-                % for j = chkIdx
-                %     XL(:,j+1) = reshape(frmL(:,j+(1:chunk_size)), [], 1);
-                %     XR(:,j+1) = reshape(frmR(:,j+(1:chunk_size)), [], 1);
-                % end
-
                 this.encodeGASSOM(XL,XR);
                 for iw = this.gsm{1}.winners
                     winners(iw) = winners(iw)+1;
@@ -339,12 +365,73 @@ classdef GASSOM_Model < handle
                     gsmMapShotVideoMaker.addGassomMapFrame(this);
                 end
 
-                % disp(i_tg);
                 upd_som(i_tg);
                 i_tg = i_tg + 1;
             end
 
             gsmMapShotVideoMaker.close()
+        end
+
+        function [winners] = trainGASSOM_cochleagram_IOSR2 (this, chunk_size)
+            % same as trainGASSOM_cochleagram, train gassom with cochleagram input
+            % but use function from IOSR to get the cochleagram
+            this.somTrainParam.input_type = 'timit';
+            upd_som = textprogressbar(this.max_iter);
+
+            % gsmMapShotVideoMaker = gassomMapVideoMaker('temp_data/timeshot', "cochleagram", chunk_size);
+            % gsmMapShotVideoMaker.open();
+
+            chunk_shift = 1;
+
+            winners = zeros(1,this.gsm{1}.n_subspace);
+
+            for i_tg = 1:2:this.max_iter
+                XL = [];
+                XR = [];
+                for i_it = 1:1:2
+                    [frmL,frmR,~] = this.env.genOneTrainEpisodeCochIOSR(this.somTrainParam,i_tg);
+
+                    nFrm = size(frmL, 2);
+                    assert(nFrm == size(frmR, 2));
+
+                    chkStart = 0:chunk_shift:nFrm-chunk_size;
+
+                    xl = zeros(128*chunk_size, length(chkStart));
+                    xr = zeros(128*chunk_size, length(chkStart));
+
+                    for i_chk = 1:1:length(chkStart)
+                        j = chkStart(i_chk);
+
+                        chkL = frmL(:,j+(1:chunk_size));
+                        chkR = frmR(:,j+(1:chunk_size));
+
+                        single_len = size(chkL,1);
+                        rm = [chkL; chkR];
+                        rm = rm / norm(rm);
+                        chkL = rm(1:single_len,:);
+                        chkR = rm(single_len+1:end,:);
+
+                        xl(:,i_chk) = reshape(chkL, [], 1);
+                        xr(:,i_chk) = reshape(chkR, [], 1);
+                    end
+
+                    XL = [XL xl];
+                    XR = [XR xr];
+                end
+
+                this.encodeGASSOM(XL,XR);
+                for iw = this.gsm{1}.winners
+                    winners(iw) = winners(iw)+1;
+                end
+
+                % if i_tg == 1 || mod(i_tg-1, 1000) == 0
+                %     gsmMapShotVideoMaker.addGassomMapFrame(this);
+                % end
+
+                upd_som(i_tg);
+            end
+
+            % gsmMapShotVideoMaker.close()
         end
         
         function trainGASSOM_ratemap(this)

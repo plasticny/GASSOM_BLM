@@ -1,4 +1,4 @@
-function [gm] = initGassom (topo_space, max_iter)
+function [gm] = initGassom (topo_space, max_iter, chunk_size)
     rng(49);
 
     % sofaloaded = SOFALoader;
@@ -9,12 +9,12 @@ function [gm] = initGassom (topo_space, max_iter)
     fs = 44100;
     patch_dur = 0; % should be not neccessary in this chapter
     gm_param = {fs, patch_dur, topo_space, max_iter};
-    gm = GASSOM_Model(gm_param);
+    gm = GASSOM_Model(gm_param, 128 * chunk_size, "cochleagram");
     disp("init gassom end");
 end
 
-function [gm] = loadGassom (topo_space, max_iter, gsm_path)
-    gm = initGassom(topo_space, max_iter);
+function [gm] = loadGassom (topo_space, max_iter, gsm_path, chunk_size)
+    gm = initGassom(topo_space, max_iter, chunk_size);
     gm.gsm{1} = load(gsm_path).gsm;
 end
 
@@ -40,13 +40,13 @@ function generateDnnSamples (gm)
         gm.netTestParam.hrtf, gm.netTestParam.subject, ...
         gm.netTestParam.gwn_seed...
     );
-    save("temp_data/dnnTrainGwn.mat", "trainX", "trainY");
+    save("temp_data/dnnTrainGwnCochl.mat", "trainX", "trainY");
     % save("temp_data/dnnValidGwn.mat", "validX", "validY");
-    save("temp_data/dnnTestGwn.mat", "testX", "testY");
+    save("temp_data/dnnTestGwnCochl.mat", "testX", "testY");
 end
 
 function [trained_dnn, train_info] = trainDNN (gm, chunk_size)
-    trainSamples = load("temp_data/dnnTrainGwn.mat");
+    trainSamples = load("temp_data/dnnTrainGwnCochl.mat");
 
     assert(gm.netTrainParam.max_iter == size(trainSamples.trainX, 1) / 256);
 
@@ -78,19 +78,25 @@ function [trained_dnn, train_info] = trainDNN (gm, chunk_size)
         XTrain(i, :) = res;
     end
 
+    rng(49);
+
     [dnn, training_option] = createDNN(prod(gm.topo_space), gm.locs_num, 3);
     [trained_dnn, train_info] = trainNetwork(XTrain, YTrain, dnn, training_option);
 end
 
-function [mae, chunk_mae, azimuth_predicts, azimuth_truths] = testModel (...
+function [mae, chunk_mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel (...
     gm, trained_dnn, chunk_size ...
 )
-    testSamples = load("temp_data/dnnTestGwn.mat");
+    testSamples = load("temp_data/dnnTestGwnCochl.mat");
     assert(gm.netTestParam.max_iter == size(testSamples.testX, 1) / 256);
 
     ae = zeros(gm.netTestParam.max_iter, 1);
     azimuth_predicts = zeros(gm.netTestParam.max_iter, 1);
     azimuth_truths = zeros(gm.netTestParam.max_iter, 1);
+
+    cumu_resp = zeros(gm.locs_num, prod(gm.topo_space));
+    loc_cnt = zeros(gm.locs_num, 1);
+
     chunk_ae = [];
 
     nFrm = size(testSamples.testX, 2);
@@ -119,6 +125,9 @@ function [mae, chunk_mae, azimuth_predicts, azimuth_truths] = testModel (...
 
             x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
             res = gm.getResponse(x);
+            loc_idx = (azimuth_truth + 100) / 10;
+            cumu_resp(loc_idx, :) = cumu_resp(loc_idx, :) + res';
+            loc_cnt(loc_idx) = loc_cnt(loc_idx) + 1;
             responses(i, :) = res;
         end
 
@@ -147,6 +156,7 @@ function [mae, chunk_mae, azimuth_predicts, azimuth_truths] = testModel (...
         
     mae = mean(ae);
     chunk_mae = mean(chunk_ae);
+    cumu_resp = cumu_resp ./ loc_cnt;
 end
 
 function plotCochl (frm, cfs, title_str, cmin, cmax)
@@ -263,7 +273,7 @@ function visualizeGassomTrainingSample (gm, ind)
     );
 
     loc = gm.env.locs_list(:, gm.somTrainParam.locs_rand(ind));
-    [frmL, frmR, ~] = gm.env.genOneEpisodeCochIOSR(gm.somTrainParam, ind);
+    [frmL, frmR, ~] = gm.env.genOneTrainEpisodeCochIOSR(gm.somTrainParam, ind);
 
     % normalize
     sample_len = size(frmL, 1);
@@ -387,16 +397,29 @@ function visualizeBMT (norm_winners, save_folder)
     save(save_folder + "/bmt_std.mat", "bmt_std");
 end
 
-% clc; clear all; addpath(genpath(pwd));
+function visualizeRespHeatMap (cumu_resp, map_width, chunk_size, save_folder)
+    resp_save_folder = save_folder + "/map_response/";
+    for i = 1:size(cumu_resp, 1)
+        azimuth = i * 10 - 100;
+        figure;
+        heatmap(reshape(cumu_resp(i,:), map_width, map_width)');
+        title(...
+            sprintf("average gassom response on test set\n" + ...
+            "(gassom map: " + map_width + "x" + map_width + ", chunk size: " + chunk_size + ", azimuth: " + azimuth + ")")...
+        );
+        saveas(gca, resp_save_folder + i + "_azimuth_" + azimuth + ".png");
+    end
+end
 
+map_width = 8;
 chunk_size = 5;
-save_folder = "chp4_result/8x8_sz5_sf1/";
+save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
 
 %%% train gassom
-% gm = initGassom([5, 5], 5e4);
+% gm = initGassom([20, 20], 5e4, chunk_size);
 % gm = initGassom([5, 5], 24000);
-% gm = loadGassom([8, 8], 5e4, save_folder + "gsm.mat");
-% winners = gm.trainGASSOM_cochleagram_IOSR(chunk_size);
+gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size);
+% winners = gm.trainGASSOM_cochleagram_IOSR2(chunk_size);
 % gsm = gm.gsm{1};
 % save(save_folder + "gsm.mat", "gsm");
 % visualizeCochlMap(gm, chunk_size);
@@ -411,21 +434,25 @@ save_folder = "chp4_result/8x8_sz5_sf1/";
 
 %%% train dnn
 % generateDnnSamples(gm);
-% [trained_dnn, train_info] = trainDNN(gm, chunk_size);
+[trained_dnn, train_info] = trainDNN(gm, chunk_size);
 % save(save_folder + "dnn.mat", "trained_dnn");
 % save(save_folder + "dnn_train_info.mat", "train_info");
 
 %%% test model
 % trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
-[mae, chunk_mae, azimuth_predicts, azimuth_truths] = testModel(gm, trained_dnn, chunk_size);
+[mae, chunk_mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size);
 disp("mae");
 disp(mae);
-disp('chunk_mae');
-disp(chunk_mae);
-save(save_folder + "mae.mat", "mae");
-save(save_folder + "chunk_mae.mat", "chunk_mae");
-save(save_folder + "azimuth_predicts.mat", "azimuth_predicts");
-save(save_folder + "azimuth_truths.mat", "azimuth_truths");
+% disp('chunk_mae');
+% disp(chunk_mae);
+% save(save_folder + "mae.mat", "mae");
+% save(save_folder + "chunk_mae.mat", "chunk_mae");
+% save(save_folder + "azimuth_predicts.mat", "azimuth_predicts");
+% save(save_folder + "azimuth_truths.mat", "azimuth_truths");
+% save(save_folder + "cumu_resp.mat", "cumu_resp");
+
+% cumu_resp = load(save_folder + "cumu_resp.mat").cumu_resp;
+% visualizeRespHeatMap(cumu_resp, map_width, chunk_size, save_folder);
 
 %%% some visualization
 % visualizeHtfs(gm, 1, 45);

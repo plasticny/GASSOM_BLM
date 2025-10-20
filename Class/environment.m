@@ -73,7 +73,7 @@ classdef environment < handle
         
         function [frmL,frmR,nFrm] = genFrame(this,bi)
             frmL = []; frmR = []; nFrm = -1; %#ok<NASGU>
-            biL = bi(:,1); biR = bi(:,2);
+            biL = bi(:,2); biR = bi(:,1);
             frmIndex = bsxfun(@plus,(0:this.patch_stride:length(biL)-this.patch_len)',...
                 1:this.patch_len);
             frmL = (biL(frmIndex))'; frmR = (biR(frmIndex))';            
@@ -165,7 +165,7 @@ classdef environment < handle
             nFrm = size(blockL,2);            
         end
 
-        function [frmL, frmR, nFrm] = genOneEpisodeCochIOSR (this, param, ind)
+        function [frmL, frmR, nFrm] = genOneTrainEpisodeCochIOSR (this, param, ind)
             y_all = this.timit_train{param.audio_idx(ind),1};
             y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
 
@@ -275,6 +275,35 @@ classdef environment < handle
             end
         end
 
+        function [X, Y] = genGwn (...
+            this, ...
+            locs_list, sample_size, audio_len, fs, ...
+            hrtf_dataset, hrtf_subject, ...
+            gwn_seed ...
+        )
+            rng(gwn_seed);
+            this.stiGenerator.reset_gwn(gwn_seed);
+            X = cell(sample_size, 2);
+            Y = cell(sample_size, 1);
+
+            tpb = textprogressbar(sample_size, "showremtime", true);
+            for i_iter = 1:sample_size
+                y = this.genStimuli('GWN',audio_len / fs);
+                loc_idx = randi(length(locs_list));
+                loc = locs_list(:, loc_idx);
+                bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);
+
+                frmL = bi(:,2);
+                frmR = bi(:,1);
+
+                X{i_iter}{1} = frmL;
+                X{i_iter}{2} = frmR;
+                Y{i_iter} = loc_idx;
+
+                tpb(i_iter);
+            end
+        end
+
         function [X, Y] = genGwnIosr (...
             this, ...
             locs_list, sample_size, audio_len, fs, ...
@@ -312,167 +341,6 @@ classdef environment < handle
 
                 tpb(i_iter);
             end
-        end
-
-        function [XTrain, YTrain] = genTrainGwnIosr (...
-            this,...
-            locs_list, sample_size, audio_len, fs,...
-            hrtf_dataset, hrtf_subject,...
-            gwn_seed, ...
-            chunk_size ...
-        )
-            chunk_shift = 1;
-
-            this.stiGenerator.reset_gwn(gwn_seed);
-            XTrain = [];
-            YTrain = [];
-
-            tpb = textprogressbar(sample_size, 'showremtime', true);
-            for i_iter = 1:sample_size
-                y = this.genStimuli('GWN',audio_len / fs);
-                loc_idx = randi(length(locs_list));
-                loc = locs_list(:, loc_idx);
-                bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);
-
-                frmL = audio2cochlIOSR(...
-                    bi(:,2), ...
-                    fs, 100, 20000, 128, ...
-                    8, 4 ...
-                );
-                frmR = audio2cochlIOSR(...
-                    bi(:,1), ...
-                    fs, 100, 20000, 128, ...
-                    8, 4 ...
-                );
-                nFrm = size(frmL, 2);
-
-                assert(nFrm == size(frmR, 2));
-
-                chkIdx = 0:chunk_shift:nFrm-chunk_size;
-                j = chkIdx(randi(length(chkIdx)));
-                chkL = frmL(:,j+(1:chunk_size));
-                chkR = frmR(:,j+(1:chunk_size));
-
-                single_len = size(chkL,1);
-                rm = normalize([chkL;chkR]);
-                chkL = rm(1:single_len,:);
-                chkR = rm(single_len+1:end,:);
-
-                XTrain = [XTrain; [chkL chkR]];
-                YTrain = [YTrain; loc_idx];
-
-                tpb(i_iter);
-            end
-        end
-
-        function [XTest, YTest, nChk] = genOneTestGwnIosr (...
-            this, ...
-            locs_list, audio_len, fs, ...
-            hrtf_dataset, hrtf_subject, ...
-            gwn_seed, ...
-            chunk_size ...
-        )
-            chunk_shift = 1;
-
-            this.stiGenerator.reset_gwn(gwn_seed);
-
-            y = this.genStimuli('GWN',audio_len / fs);
-            loc_idx = randi(length(locs_list));
-            loc = locs_list(:, loc_idx);
-            bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);
-
-            frmL = audio2cochlIOSR(...
-                bi(:,2), ...
-                fs, 100, 20000, 128, ...
-                8, 4 ...
-            );
-            frmR = audio2cochlIOSR(...
-                bi(:,1), ...
-                fs, 100, 20000, 128, ...
-                8, 4 ...
-            );
-            nFrm = size(frmL, 2);
-
-            assert(nFrm == size(frmR, 2));
-
-            nChk = length(0:chunk_shift:nFrm-chunk_size);
-
-            XTest = [];
-            for i_chk = 0:chunk_shift:nFrm-chunk_size
-                chkL = frmL(:,i_chk+(1:chunk_size));
-                chkR = frmR(:,i_chk+(1:chunk_size));
-
-                single_len = size(chkL,1);
-                rm = normalize([chkL;chkR]);
-                chkL = rm(1:single_len,:);
-                chkR = rm(single_len+1:end,:);
-
-                XTest = [XTest; [chkL chkR]];
-            end
-
-            YTest = loc_idx;
-        end
-
-        function [XTest, YTest, nChk] = genTestGwnIosr (...
-            this, ...
-            locs_list, sample_size, audio_len, fs, ...
-            hrtf_dataset, hrtf_subject, ...
-            gwn_seed ...
-        )
-            chunk_size = 5;
-            chunk_shift = 1;
-
-            this.stiGenerator.reset_gwn(gwn_seed);
-            XTest = [];
-            YTest = [];
-
-            nChk = -1;
-
-            tpb = textprogressbar(sample_size);
-            for i_iter = 1:sample_size
-                y = this.genStimuli('GWN',audio_len / fs);
-                loc_idx = randi(length(locs_list));
-                loc = locs_list(:, loc_idx);
-                bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);
-
-                frmL = audio2cochlIOSR(...
-                    bi(:,2), ...
-                    fs, 100, 20000, 128, ...
-                    8, 4 ...
-                );
-                frmR = audio2cochlIOSR(...
-                    bi(:,1), ...
-                    fs, 100, 20000, 128, ...
-                    8, 4 ...
-                );
-                nFrm = size(frmL, 2);
-
-                assert(nFrm == size(frmR, 2));
-
-
-                if nChk == -1
-                    nChk = length(0:chunk_shift:nFrm-chunk_size);
-                else
-                    assert(nChk == length(0:chunk_shift:nFrm-chunk_size));
-                end
-
-                for i_chk = 0:chunk_shift:nFrm-chunk_size
-                    chkL = frmL(:,i_chk+(1:chunk_size));
-                    chkR = frmR(:,i_chk+(1:chunk_size));
-
-                    single_len = size(chkL,1);
-                    rm = normalize([chkL;chkR]);
-                    chkL = rm(1:single_len,:);
-                    chkR = rm(single_len+1:end,:);
-
-                    XTest = [XTest; [chkL chkR]];
-                end
-                YTest = [YTest; loc_idx];
-
-                tpb(i_iter);
-            end
-
-            assert((size(XTest, 1) / 128 / nChk) == size(YTest, 1));
         end
         
         function [XTrain,YTrain] = genTrainGWN(this,netTrainParam)
