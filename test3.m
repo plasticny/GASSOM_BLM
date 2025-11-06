@@ -1,9 +1,9 @@
-% test3
+% % test3
 clc; clear all; addpath(genpath(pwd));
 
 %% Produced loaded SOFA if needed
-sofaloaded = SOFALoader;
-save('sofaloaded.mat', 'sofaloaded');
+% sofaloaded = SOFALoader;
+% save('sofaloaded.mat', 'sofaloaded');
 %%
 load sofaloaded.mat;
 % i_sub = 43;
@@ -12,8 +12,9 @@ fs = 44100;
 patch_dur = 16*1e-3;
 topo_space = [16 16];
 max_iter = 5e4;
+% max_iter = 100;
 gm_param = {fs, patch_dur, topo_space, max_iter};
-GM = GASSOM_Model(gm_param);
+GM = GASSOM_Model(gm_param, round(fs * patch_dur), "waveform");
 
 %%
 for i_sub = 1:sofaloaded.cipic_subject_num
@@ -34,7 +35,7 @@ for i_sub = 1:sofaloaded.cipic_subject_num
     [XTrain,YTrain] = GM.env.genTrainGWN(GM.netTrainParam);
     XTrain = GM.getResponse(XTrain);
     model_no_gsm = trainNetwork(XTrain',categorical(YTrain'),net,options);
-    
+
     save(['test3_result/cipic',int2str(GM.somTrainParam.subject),'_',...
         GM.inputType,'.mat'],'GM','model_no_gsm');
 end

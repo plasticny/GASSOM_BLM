@@ -62,25 +62,13 @@ classdef GASSOM_Model < handle
             
             this.somTrainParam.input_type = [];
             this.somTrainParam.hrtf = 'kemar';
-            % this.somTrainParam.hrtf = 'cipic';
             this.somTrainParam.subject = 0;
-            % this.somTrainParam.subject = 3;
             this.somTrainParam.max_iter = this.max_iter;
             this.somTrainParam.locs_rand = randi(this.locs_num,this.max_iter,1);  
             this.somTrainParam.audio_dur = 200e-3;
             this.somTrainParam.audio_len = round(this.somTrainParam.audio_dur*this.fs);
-%             this.somTrainParam.audio_idx = randi(length(this.env.timit_train),this.max_iter,1);
             this.somTrainParam.audio_idx = genRandInd(this.env.timit_train(:,2),this.max_iter);
             this.somTrainParam.audio_bgn = genRandBegin(cell2mat(this.env.timit_train(:,2)),this.somTrainParam.audio_idx,this.somTrainParam.audio_len);
-            
-%             if strcmp(this.somTrainParam.hrtf,'cipic')
-% %                 this.azim_list = this.env.sofa.cipic_azimuths;
-%                 this.azim_list = [-80 -55 -40 -30 -20 -10 0 10 20 30 40 55 80];
-%                 this.elev_list = [0,180];
-%                 this.locs_list = combvec(this.azim_list,this.elev_list);
-%                 this.locs_num = length(this.locs_list);
-%                 this.env.setLocs({this.azim_list,this.elev_list});
-%             end
             
             this.netTrainParam.hrtf = 'kemar'; 
             this.netTrainParam.subject = 0;
@@ -126,6 +114,19 @@ classdef GASSOM_Model < handle
             this.somTrainParam.subject = s;
             this.netTrainParam.subject = s;
             this.netTestParam.subject = s;
+
+            if strcmp(this.somTrainParam.hrtf,'cipic')
+                sel_cipic_azim = [-80 -55 -40:10:40 55 80];
+                this.azim_list = [sel_cipic_azim, sel_cipic_azim+180];
+                this.elev_list = [0];
+            else
+                this.azim_list = [-90:10:90];
+                this.azim_list = [this.azim_list, this.azim_list+180];
+                this.elev_list = [0];
+            end
+
+            this.setEnvLocs;
+            this.setEnvTestLocs;
         end
         
         function setDur(this,dur)
@@ -185,8 +186,9 @@ classdef GASSOM_Model < handle
             % winner = this.gsm{1}.assomEncode([XL;XR]);
             % this.gsm{1}.updateBasis([XL;XR]);
 
-            this.gsm{1}.assomEncode([XL;XR]);
-            this.gsm{1}.updateBasis([XL;XR]);  
+            X = [XL;XR];
+            this.gsm{1}.assomEncode(X);
+            this.gsm{1}.updateBasis(X);  
 
             if ~this.binaural_only_flag
                 this.gsm{2}.assomEncode(XL);
@@ -319,13 +321,13 @@ classdef GASSOM_Model < handle
             end
         end
 
-        function [winners] = trainGASSOM_cochleagram_IOSR (this, chunk_size)
+        function [winners] = trainGASSOM_cochleagram_IOSR (this, chunk_size, save_folder)
             % same as trainGASSOM_cochleagram, train gassom with cochleagram input
             % but use function from IOSR to get the cochleagram
             this.somTrainParam.input_type = 'timit';
             upd_som = textprogressbar(this.max_iter);
 
-            gsmMapShotVideoMaker = gassomMapVideoMaker('chp4_result/timeshot', chunk_size);
+            gsmMapShotVideoMaker = gassomMapVideoMaker(save_folder + '/timeshot', "cochleagram", chunk_size);
             gsmMapShotVideoMaker.open();
 
             chunk_shift = 1;
@@ -372,29 +374,29 @@ classdef GASSOM_Model < handle
             gsmMapShotVideoMaker.close()
         end
 
-        function [winners] = trainGASSOM_cochleagram_IOSR2 (this, chunk_size)
+        function [winners] = trainGASSOM_cochleagram_IOSR2 (this, chunk_size, save_folder)
             % same as trainGASSOM_cochleagram, train gassom with cochleagram input
             % but use function from IOSR to get the cochleagram
             this.somTrainParam.input_type = 'timit';
             upd_som = textprogressbar(this.max_iter);
 
-            % gsmMapShotVideoMaker = gassomMapVideoMaker('temp_data/timeshot', "cochleagram", chunk_size);
-            % gsmMapShotVideoMaker.open();
+            gsmMapShotVideoMaker = gassomMapVideoMaker(save_folder + '/timeshot', "cochleagram", chunk_size);
+            gsmMapShotVideoMaker.open();
 
             chunk_shift = 1;
 
             winners = zeros(1,this.gsm{1}.n_subspace);
 
-            for i_tg = 1:2:this.max_iter
+            for i_tg = 1:1:this.max_iter
                 XL = [];
                 XR = [];
-                for i_it = 1:1:2
+                for i_it = 1:1:1
                     [frmL,frmR,~] = this.env.genOneTrainEpisodeCochIOSR(this.somTrainParam,i_tg);
 
                     nFrm = size(frmL, 2);
                     assert(nFrm == size(frmR, 2));
 
-                    chkStart = 0:chunk_shift:nFrm-chunk_size;
+                    chkStart = 0:chunk_shift:(nFrm-chunk_size);
 
                     xl = zeros(128*chunk_size, length(chkStart));
                     xr = zeros(128*chunk_size, length(chkStart));
@@ -424,14 +426,14 @@ classdef GASSOM_Model < handle
                     winners(iw) = winners(iw)+1;
                 end
 
-                % if i_tg == 1 || mod(i_tg-1, 1000) == 0
-                %     gsmMapShotVideoMaker.addGassomMapFrame(this);
-                % end
+                if i_tg == 1 || mod(i_tg-1, 1000) == 0
+                    gsmMapShotVideoMaker.addGassomMapFrame(this);
+                end
 
                 upd_som(i_tg);
             end
 
-            % gsmMapShotVideoMaker.close()
+            gsmMapShotVideoMaker.close()
         end
         
         function trainGASSOM_ratemap(this)

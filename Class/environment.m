@@ -312,8 +312,8 @@ classdef environment < handle
         )
             rng(gwn_seed);
             this.stiGenerator.reset_gwn(gwn_seed);
-            X = [];
-            Y = [];
+            X = cell(sample_size, 2);
+            Y = cell(sample_size, 1);
 
             tpb = textprogressbar(sample_size, "showremtime", true);
             for i_iter = 1:sample_size
@@ -336,8 +336,9 @@ classdef environment < handle
 
                 assert(nFrm == size(frmR, 2));
 
-                X = [X; frmL; frmR];
-                Y = [Y; loc_idx];
+                X{i_iter}{1} = frmL;
+                X{i_iter}{2} = frmR;
+                Y{i_iter} = loc_idx;
 
                 tpb(i_iter);
             end

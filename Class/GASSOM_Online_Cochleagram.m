@@ -70,12 +70,13 @@ classdef GASSOM_Online_Cochleagram < handle
             % obj.sigma_A = 2;
             % obj.sigma_C = .1;
             % obj.sigma_A = 2;
-            obj.sigma_A = 2;
-            obj.sigma_C = .2;
+            obj.sigma_A = 3.2;
+            obj.sigma_C = .32;
 
             % obj.tconst = 10000;
-            obj.tconst = 6250;
-            % obj.tconst = 40000;
+            % obj.tconst = 6250;
+            % obj.tconst = 8000;
+            obj.tconst = 40000;
             
             obj.transProb =  genTransProbG(obj.topo_subspace,obj.sigmaTrans, obj.alphaTrans,0); 
             np = rand(obj.n_subspace,1);    

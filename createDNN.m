@@ -44,13 +44,13 @@ switch net_no
 end
 
 switch net_no
-    case {1, 2}
+    case {1}
         % original 10 epochs
         options = trainingOptions('sgdm','InitialLearnRate',0.1,'LearnRateDropFactor',0.1,'ExecutionEnvironment','cpu',...
             'Shuffle','once','MaxEpochs',1);
-    case 3
+    case {2, 3}
         % cochleagram 20 epochs
-        % waveform 100 epochs
+        % waveform 40 epochs
         options = trainingOptions(...
             "sgdm",...
             "InitialLearnRate", 0.1,...

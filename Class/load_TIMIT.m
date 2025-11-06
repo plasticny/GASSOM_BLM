@@ -19,8 +19,8 @@ classdef load_TIMIT
                 obj.train_path = inputArg{1};
                 obj.test_path = inputArg{2};
             else
-                obj.train_path = "/Users/cst/Documents/Research/GASSOM/GASSOM_SSL-master/data/lisa/data/timit/raw/TIMIT/TRAIN";
-                obj.test_path  = "/Users/cst/Documents/Research/GASSOM/GASSOM_SSL-master/data/lisa/data/timit/raw/TIMIT/TEST";
+                obj.train_path = "/home/nycheung/desktop/shuto_gassom/data/TIMIT/TRAIN";
+                obj.test_path  = "/home/nycheung/desktop/shuto_gassom/data/TIMIT/TEST";
             end
             obj.fs = 44100;
             obj.train_list = listFiles(obj.train_path,'*.wav');

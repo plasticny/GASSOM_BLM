@@ -19,99 +19,52 @@ function [gm] = loadGassom (topo_space, max_iter, gsm_path, chunk_size, hrtf_dat
     gm.gsm{1} = load(gsm_path).gsm;
 end
 
-function generateDnnSamples (gm)
-    disp("generating training samples");
+function generateDnnTrainSamples (gm, hrtf, hrtf_subject)
     [trainX, trainY] = gm.env.genGwnIosr(...
-        gm.locs_list, gm.netTrainParam.max_iter, ...
+        gm.locs_list, gm.locs_num * 100, ...
         gm.netTrainParam.audio_len, gm.env.fs, ...
-        gm.netTrainParam.hrtf, gm.netTrainParam.subject, ...
+        hrtf, hrtf_subject, ...
         gm.netTrainParam.gwn_seed...
     );
-    % disp("generating validing samples");
-    % [validX, validY] = gm.env.genGwnIosr(...
-    %     gm.locs_list, 190, ...
-    %     gm.netTrainParam.audio_len, gm.env.fs, ...
-    %     gm.netTrainParam.hrtf, gm.netTrainParam.subject, ...
-    %     1003 ...
-    % );
-    disp("generating testing samples");
-    [testX, testY] = gm.env.genGwnIosr(...
-        gm.locs_list, gm.netTestParam.max_iter, ...
+    save("chp6/cache/dnnTrainGwn_" + hrtf + "_" + hrtf_subject + ".mat", "trainX", "trainY");
+end
+
+function generateDnnTestSamples (gm, hrtf, hrtf_subject)
+    [frontTestX, frontTestY] = gm.env.genGwnIosr(...
+        gm.locs_list(:, 1:gm.locs_num / 2), gm.locs_num * 50, ...
         gm.netTestParam.audio_len, gm.env.fs, ...
-        gm.netTestParam.hrtf, gm.netTestParam.subject, ...
+        hrtf, hrtf_subject, ...
         gm.netTestParam.gwn_seed...
     );
-    save("temp_data/dnnTrainGwnCochl.mat", "trainX", "trainY");
-    % save("temp_data/dnnValidGwn.mat", "validX", "validY");
-    save("temp_data/dnnTestGwnCochl.mat", "testX", "testY");
+    [backTestX, backTestY] = gm.env.genGwnIosr(...
+        gm.locs_list(:, gm.locs_num / 2 + 1:end), gm.locs_num * 50, ...
+        gm.netTestParam.audio_len, gm.env.fs, ...
+        hrtf, hrtf_subject, ...
+        gm.netTestParam.gwn_seed * 2 ...
+    );
+    save("chp6/cache/dnnTestGwn_" + hrtf + "_" + hrtf_subject + ".mat", "frontTestX", "frontTestY", "backTestX", "backTestY");
 end
 
-function [trained_dnn, train_info] = trainDNN (gm, chunk_size)
-    trainSamples = load("temp_data/dnnTrainGwnCochl.mat");
-
-    assert(gm.netTrainParam.max_iter == size(trainSamples.trainX, 1) / 256);
-
-    XTrain = zeros(gm.netTrainParam.max_iter, prod(gm.topo_space));
-    YTrain = categorical(trainSamples.trainY);
-
-    nFrm = size(trainSamples.trainX, 2);
-
-    rng(49);
-
-    for i = 1:gm.netTrainParam.max_iter
-        o = 256 * (i - 1);
-        frmL = trainSamples.trainX((1 + o):(128 + o), :);
-        frmR = trainSamples.trainX((129 + o):(256 * i), :);
-
-        chkIdx = 0:1:nFrm-chunk_size;
-        j = chkIdx(randi(length(chkIdx)));
-        chkL = frmL(:,j+(1:chunk_size));
-        chkR = frmR(:,j+(1:chunk_size));
-
-        single_len = size(chkL,1);
-        rm = normalize([chkL;chkR]);
-        chkL = rm(1:single_len,:);
-        chkR = rm(single_len+1:end,:);
-
-        x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
-
-        res = gm.getResponse(x);
-        XTrain(i, :) = res;
-    end
-
-    rng(49);
-
-    [dnn, training_option] = createDNN(prod(gm.topo_space), gm.locs_num, 3);
-    [trained_dnn, train_info] = trainNetwork(XTrain, YTrain, dnn, training_option);
-end
-
-function [mae, chunk_mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel (...
-    gm, trained_dnn, chunk_size ...
+function [azimuth_predicts, azimuth_truths, cumu_resp] = testModel (...
+    gm, trained_dnn, chunk_size, test_x, test_y ...
 )
-    testSamples = load("temp_data/dnnTestGwnCochl.mat");
-    assert(gm.netTestParam.max_iter == size(testSamples.testX, 1) / 256);
-
-    ae = zeros(gm.netTestParam.max_iter, 1);
-    azimuth_predicts = zeros(gm.netTestParam.max_iter, 1);
-    azimuth_truths = zeros(gm.netTestParam.max_iter, 1);
+    azimuth_predicts = zeros(length(test_y), 1);
+    azimuth_truths = zeros(length(test_y), 1);
 
     cumu_resp = zeros(gm.locs_num, prod(gm.topo_space));
     loc_cnt = zeros(gm.locs_num, 1);
 
-    chunk_ae = [];
+    nFrm = size(test_x{1}{1}, 2);
 
-    nFrm = size(testSamples.testX, 2);
-
-    tpb = textprogressbar(gm.netTestParam.max_iter, 'showremtime', true);
-    for i_iter = 1:gm.netTestParam.max_iter
-        YTest = testSamples.testY(i_iter);
+    tpb = textprogressbar(length(test_y), 'showremtime', true);
+    for i_iter = 1:length(test_y)
+        YTest = test_y{i_iter};
 
         nChk = length(0:1:nFrm-chunk_size);
 
-        o = 256 * (i_iter - 1);
-        frmL = testSamples.testX((1 + o):(128 + o), :);
-        frmR = testSamples.testX((129 + o):(256 * i_iter), :);
-        azimuth_truth = gm.locs_list(1, YTest(1));
+        frmL = test_x{i_iter}{1};
+        frmR = test_x{i_iter}{2};
+        azimuth_truth = YTest(1);
 
         % get response from gassom
         responses = zeros(nChk, prod(gm.topo_space));
@@ -126,38 +79,35 @@ function [mae, chunk_mae, azimuth_predicts, azimuth_truths, cumu_resp] = testMod
 
             x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
             res = gm.getResponse(x);
-            loc_idx = (azimuth_truth + 100) / 10;
-            cumu_resp(loc_idx, :) = cumu_resp(loc_idx, :) + res';
-            loc_cnt(loc_idx) = loc_cnt(loc_idx) + 1;
+            cumu_resp(azimuth_truth, :) = cumu_resp(azimuth_truth, :) + res';
+            loc_cnt(azimuth_truth) = loc_cnt(azimuth_truth) + 1;
             responses(i, :) = res;
         end
 
-        % predict response and calculate mae
+        % predict response
         cum_predicted = zeros(1, length(gm.locs_list));
         for i_chk = 1:nChk
             res = responses(i_chk, :);
             predicted = predict(trained_dnn, res);
             cum_predicted = cum_predicted + predicted;
-
-            % chunk mae
-            [~, cp] = max(predicted);
-            chunk_azimuth_predict = gm.locs_list(1, cp);
-            chunk_ae = [chunk_ae; abs(chunk_azimuth_predict - azimuth_truth)];
         end
-        [~, yp] = max(cum_predicted);
+        [~, azimuth_predict] = max(cum_predicted);
 
-        azimuth_predict = gm.locs_list(1, yp);
-
-        ae(i_iter) = abs(azimuth_predict - azimuth_truth);
         azimuth_predicts(i_iter) = azimuth_predict;
         azimuth_truths(i_iter) = azimuth_truth;
 
         tpb(i_iter);
     end
         
-    mae = mean(ae);
-    chunk_mae = mean(chunk_ae);
     cumu_resp = cumu_resp ./ loc_cnt;
+end
+
+function [front_confusion_rate, back_confustion_rate] = estimate_confusion_rate(gm, test_hrtf_database, test_hrtf_subject, save_folder)
+    predicts = load(save_folder + "azimuth_predicts_" + test_hrtf_database + "_" + test_hrtf_subject + ".mat");
+    front_pred = predicts.front_azimuth_predicts;
+    back_pred = predicts.back_azimuth_predicts;
+    front_confusion_rate = sum(front_pred >= gm.locs_num / 2 + 1) / length(front_pred);
+    back_confustion_rate = sum(back_pred <= gm.locs_num / 2) / length(back_pred);
 end
 
 function plotCochl (frm, cfs, title_str, cmin, cmax)
@@ -412,51 +362,95 @@ function visualizeRespHeatMap (cumu_resp, map_width, chunk_size, save_folder)
     end
 end
 
-hrtf_database = "kemar";
-hrtf_subject = 0;
+hrtf_database = "cipic";
 map_width = 10;
 chunk_size = 10;
-save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
 
-if ~exist(save_folder,'dir') mkdir(save_folder); end
+% cipic_subjects = [...
+%     48, 50, 51, 58, 59, ...
+%     60, 119, 126, 127, 131, 133, ...
+%     135, 137, 147, 148, 153, 155, 156, 158, ...
+%     162, 163, 165
+% ];
+% cipic_subjects = [
+%    3,  8,  9, 10, 11, 12, 15, 17, 18, 19, 
+%   20, 21, 27, 28, 33, 40, 44, 61, 65, 124,
+%   134, 152, 154, 165
+% ];
+cipic_subjects = [9];
 
-%%% train gassom
-gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
-% gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size);
-winners = gm.trainGASSOM_cochleagram_IOSR(chunk_size, save_folder);
-gsm = gm.gsm{1};
-save(save_folder + "gsm.mat", "gsm");
-visualizeCochlMap(gm, chunk_size);
+for hrtf_subject = cipic_subjects
+    % hrtf_subject = 9;
+    disp("train comptational model for cipic subject " + hrtf_subject);
 
-%%% calculate BMT
-% norm_winners = load("chp4_result/10x10_sz5_sf1/norm_winners.mat").norm_winners;
-norm_winners = (winners.*100)./gm.max_iter;
-disp(std(norm_winners));
-save(save_folder + "winners.mat", "winners");
-save(save_folder + "norm_winners.mat", "norm_winners");
-visualizeBMT(norm_winners, save_folder);
+    save_folder = "chp6/comptational_model_10x10/subject_" + hrtf_subject + "/";
+    % save_folder = "chp6/temp/";
+
+    if ~exist(save_folder,'dir') mkdir(save_folder); end
+
+    %%% train gassom
+    gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
+    winners = gm.trainGASSOM_cochleagram_IOSR(chunk_size, save_folder);
+    gsm = gm.gsm{1};
+    save(save_folder + "gsm.mat", "gsm");
+    % visualizeCochlMap(gm, chunk_size);
+
+    %%% calculate BMT
+    % norm_winners = load("chp4_result/10x10_sz5_sf1/norm_winners.mat").norm_winners;
+    norm_winners = (winners.*100)./gm.max_iter;
+    disp(std(norm_winners));
+    save(save_folder + "winners.mat", "winners");
+    save(save_folder + "norm_winners.mat", "norm_winners");
+    visualizeBMT(norm_winners, save_folder);
+end
 
 %%% train dnn
-% generateDnnSamples(gm);
+% generateDnnTrainSamples(gm, hrtf_database, hrtf_subject);
+% gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
 % [trained_dnn, train_info] = trainDNN(gm, chunk_size);
 % save(save_folder + "dnn.mat", "trained_dnn");
 % save(save_folder + "dnn_train_info.mat", "train_info");
+% end
+
 
 %%% test model
+% test_hrtf_database = "cipic";
+% test_hrtf_subject = 20;
+
+% gm_test_hrtf = initGassom([map_width, map_width], 5e4, chunk_size, test_hrtf_database, test_hrtf_subject);
+% generateDnnTestSamples(gm_test_hrtf, test_hrtf_database, test_hrtf_subject);
+
+% hrtf_subject = 3;
+% save_folder = "chp6/comptational_model/subject_" + hrtf_subject + "/";
+% gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
+
 % trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
-% [mae, chunk_mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size);
-% disp("mae");
-% disp(mae);
-% disp('chunk_mae');
-% disp(chunk_mae);
-% save(save_folder + "mae.mat", "mae");
-% save(save_folder + "chunk_mae.mat", "chunk_mae");
-% save(save_folder + "azimuth_predicts.mat", "azimuth_predicts");
-% save(save_folder + "azimuth_truths.mat", "azimuth_truths");
-% save(save_folder + "cumu_resp.mat", "cumu_resp");
+% testing_data = load("chp6/cache/dnnTestGwn_" + test_hrtf_database + "_" + test_hrtf_subject + ".mat");
+% [front_azimuth_predicts, front_azimuth_truths, front_cumu_resp] = testModel(...
+%     gm, trained_dnn, chunk_size, ...
+%     testing_data.frontTestX, testing_data.frontTestY ...
+% );
+% [back_azimuth_predicts, back_azimuth_truths, back_cumu_resp] = testModel(...
+%     gm, trained_dnn, chunk_size, ...
+%     testing_data.backTestX, testing_data.backTestY ...
+% );
+% save(save_folder + "azimuth_predicts_" + test_hrtf_database + "_" + test_hrtf_subject + ".mat", "front_azimuth_predicts", "back_azimuth_predicts");
+% save(save_folder + "azimuth_truths_" + test_hrtf_database + "_" + test_hrtf_subject + ".mat", "front_azimuth_truths", "back_azimuth_truths");
+% save(save_folder + "cumu_resp_" + test_hrtf_database + "_" + test_hrtf_subject + ".mat", "front_cumu_resp", "back_cumu_resp");
+
+% figure;
+% confusionchart(front_azimuth_truths, front_azimuth_predicts);
+% title("front confusion chart");
+% figure;
+% confusionchart(back_azimuth_truths, back_azimuth_predicts);
+% title("back confusion chart");
+
+% [front_confusion_rate, back_confusion_rate] = estimate_confusion_rate(gm, test_hrtf_database, test_hrtf_subject, save_folder);
+% save(save_folder + "confusion_rate_" + test_hrtf_database + "_" + test_hrtf_subject + ".mat", "front_confusion_rate", "back_confusion_rate");
 
 % cumu_resp = load(save_folder + "cumu_resp.mat").cumu_resp;
 % visualizeRespHeatMap(cumu_resp, map_width, chunk_size, save_folder);
+
 
 %%% some visualization
 % visualizeHtfs(gm, 1, 45);
