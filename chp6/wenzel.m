@@ -168,7 +168,7 @@ for computation_subject_idx = 1:2
         % ylim([-5 180]);
         % xlabel("Target Azimuth/deg");
         % ylabel("RMS/deg");
-        ni_errs = [ni_errs, errs];
+        ni_errs = [ni_errs, mean(errs, 2)];
     end
 end
 

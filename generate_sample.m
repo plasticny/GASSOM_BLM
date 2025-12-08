@@ -1,3 +1,72 @@
+clc; clear all; addpath(genpath(pwd));
+
+gm = initGassom([10, 10], 5e4, 10, "kemar", 0);
+% gm = loadGassom([10, 10], 5e4, "chp4/cipic/cochleagram/10x10_10/gsm.mat", 10, "cipic", 9);
+% gm = loadWaveformGassom([16 16], 5e4, "chp4/vecnorm/waveform/16x16_16ms/gsm.mat", 16 / 1000, "kemar", 0);
+% [trainX, trainY] = generateGassomTrainSamples(gm, "kemar", 0);
+[trainX, trainY] = generateDnnTrainSamples(gm, "kemar", 0, true, 250 / (2 ^ (1)), 250 * (2 ^ (1)));
+[testX, testY] = generateDnnTestSamples(gm, "kemar", 0, false);
+% [testX, testY] = generateDnnWaveformTestSampless(gm, "kemar", 0, true, 125, 500);
+% generateDnnTrainSamplesTimit(gm);
+
+% gwn = load("cache/dnnTrainGwn_kemar_0_1900.mat");
+% bandpassed = load("cache/dnnTrainGwn_kemar_0_1900_bandpass_all_cf_bw.mat");
+% trainX = [bandpassed.trainX; gwn.trainX];
+% trainY = [bandpassed.trainY; gwn.trainY];
+% save("cache/dnnTrainGwn_kemar_0_1900_all.mat", "trainX", "trainY", "-v7.3");
+
+% trainX = [];
+% trainY = [];
+% for cf = [250, 2000, 4000]
+%     for bw = [1/6, 1/3, 1, 2]
+%         disp(cf + " " + bw);
+
+%         lb = cf / (2 ^ (bw/2));
+%         ub = cf * (2 ^ (bw/2));
+
+%         [x, y] = gm.env.genGwnToolbox(...
+%             gm.locs_list, gm.locs_num * 100, ...
+%             gm.netTrainParam.audio_len, gm.env.fs, ...
+%             "cipic", 8, ...
+%             gm.netTrainParam.gwn_seed, ...
+%             true, lb, ub ...
+%         );
+%         trainX = [trainX; x];
+%         trainY = [trainY; y];
+%     end
+% end
+% disp("board band");
+% [x, y] = generateDnnTrainSamples(gm, "cipic", 8, false, 250 / (2 ^ (1)), 250 * (2 ^ (1)));
+% trainX = [trainX; x];
+% trainY = [trainY; y];
+% save("cache/dnnTrainGwn_cipic_8_2600_all.mat", "trainX", "trainY", "-v7.3");
+
+% cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
+% for i = 1:10
+%     s = cipic_subjects.individual_subjects(i);
+%     if exist("cache/somTrainSamples_cipic_" + s + "_26_50000.mat", "file")
+%         disp("skip " + s);
+%         continue
+%     end
+%     disp("generating individual " + s);
+%     gm = initGassom([10, 10], 5e4, 10, "cipic", s);
+%     assert(gm.locs_num == 26);
+%     generateGassomTrainSamples(gm, "cipic", s);
+%     generateDnnTrainSamples(gm, "cipic", s, false);
+
+%     for j = 1:10
+%         s = cipic_subjects.non_individual_subjects(i,j);
+%         if exist("cache/dnnTestGwn_cipic_" + s + "_2600.mat", "file")
+%             disp("skip " + s);
+%             continue
+%         end
+%         disp("generating non-individual " + s);
+%         gm = initGassom([10, 10], 5e4, 10, "cipic", s);
+%         assert(gm.locs_num == 26);
+%         generateDnnTestSamples(gm, "cipic", s, false);
+%     end
+% end
+
 function [gm] = initGassom (topo_space, max_iter, chunk_size, hrtf_database, hrtf_subject)
     rng(49);
 
@@ -59,7 +128,7 @@ function [trainX, trainY] = generateGassomTrainSamples (gm, hrtf, hrtf_subject)
     
     tpd = textprogressbar(sampleSize, "showremtime", true);
     for i = 1:sampleSize
-        [frmL, frmR, ~] = gm.env.genOneTrainEpisodeCochIOSR(gm.somTrainParam, i);
+        [frmL, frmR, ~] = gm.env.genOneEpisodeCoch2(gm.somTrainParam, i);
         trainX{i}{1} = frmL;
         trainX{i}{2} = frmR;
         trainY{i} = gm.somTrainParam.locs_rand(i);
@@ -74,7 +143,7 @@ function [trainX, trainY] = generateDnnTrainSamples (...
     do_bandpass, lb, ub ...
 )
     if do_bandpass
-        [trainX, trainY] = gm.env.genGwnIosr(...
+        [trainX, trainY] = gm.env.genGwnToolbox(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTrainParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -83,7 +152,7 @@ function [trainX, trainY] = generateDnnTrainSamples (...
         );
         save("cache/dnnTrainGwn_" + hrtf + "_" + hrtf_subject + "_" + length(trainY) + "_bandpass_" + lb + "_" + ub + ".mat", "trainX", "trainY");
     else
-        [trainX, trainY] = gm.env.genGwnIosr(...
+        [trainX, trainY] = gm.env.genGwnToolbox(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTrainParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -101,7 +170,7 @@ function generateDnnTrainSamplesTimit (gm)
 
     tpd = textprogressbar(sample_size, 'showremtime', true);
     for ind = 1:sample_size
-        [frmL, frmR, ~] = gm.env.genOneTrainEpisodeCochIOSR(gm.netTrainParam, ind);
+        [frmL, frmR, ~] = gm.env.genOneEpisodeCoch2(gm.netTrainParam, ind);
         trainX{ind}{1} = frmL;
         trainX{ind}{2} = frmR;
         trainY{ind} = gm.netTrainParam.locs_rand(ind);
@@ -116,7 +185,7 @@ function [testX, testY] = generateDnnTestSamples ( ...
     do_bandpass, lb, ub ...
 )
     if do_bandpass
-        [testX, testY] = gm.env.genGwnIosr(...
+        [testX, testY] = gm.env.genGwnToolbox(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTestParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -125,7 +194,7 @@ function [testX, testY] = generateDnnTestSamples ( ...
         );
         save("cache/dnnTestGwn_" + hrtf + "_" + hrtf_subject + "_" + length(testY) + "_bandpass_" + lb + "_" + ub + ".mat", "testX", "testY");
     else
-        [testX, testY] = gm.env.genGwnIosr(...
+        [testX, testY] = gm.env.genGwnToolbox(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTestParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -134,23 +203,6 @@ function [testX, testY] = generateDnnTestSamples ( ...
         );
         save("cache/dnnTestGwn_" + hrtf + "_" + hrtf_subject + "_" + length(testY) + ".mat", "testX", "testY");
     end
-end
-
-function generateDnnTestSamplesTimit (gm)
-    sample_size = gm.netTestParam.max_iter;
-    testX = cell(sample_size, 2);
-    testY = cell(sample_size, 1);
-
-    tpd = textprogressbar(sample_size, 'showremtime', true);
-    for ind = 1:sample_size
-        [frmL, frmR, ~] = gm.env.genOneTestEpisodeCochIOSR(gm.netTestParam, ind);
-        testX{ind}{1} = frmL;
-        testX{ind}{2} = frmR;
-        testY{ind} = gm.netTestParam.locs_rand(ind);
-        tpd(ind);
-    end
-
-    save("cache/dnnTestTimit_" + gm.netTestParam.hrtf + "_" + gm.netTestParam.subject + "_" + sample_size + ".mat", "testX", "testY");
 end
 
 function [testX, testY] = generateDnnWaveformTestSampless ( ...
@@ -181,72 +233,3 @@ end
 function generateYostTestSample (gm, lb, ub, dur)
 
 end
-
-clc; clear all; addpath(genpath(pwd));
-
-% gm = initGassom([10, 10], 5e4, 10, "cipic", 8);
-
-cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
-for i = 1:10
-    s = cipic_subjects.individual_subjects(i);
-    if exist("cache/somTrainSamples_cipic_" + s + "_26_50000.mat", "file")
-        disp("skip " + s);
-        continue
-    end
-    disp(s);
-    gm = initGassom([10, 10], 5e4, 10, "cipic", s);
-    generateGassomTrainSamples(gm, "cipic", s);
-
-    % for j = 1:10
-    %     s = cipic_subjects.non_individual_subjects(i,j);
-    %     if exist("cache/dnnTestGwn_cipic_" + s + "_2600.mat", "file")
-    %         disp("skip " + s);
-    %         continue
-    %     end
-    %     disp("generating " + s);
-    %     gm = initGassom([10, 10], 5e4, 10, "cipic", s);
-    %     generateDnnTestSamples(gm, "cipic", s, false);
-    % end
-end
-
-% gm = loadGassom([10, 10], 5e4, "chp4/cipic/cochleagram/10x10_10/gsm.mat", 10, "cipic", 9);
-% gm = loadWaveformGassom([16 16], 5e4, "chp4/vecnorm/waveform/16x16_16ms/gsm.mat", 16 / 1000, "kemar", 0);
-% [trainX, trainY] = generateGassomTrainSamples(gm, "kemar", 0);
-% [trainX, trainY] = generateDnnTrainSamples(gm, "kemar", 0, true, 250 / (2 ^ (1)), 250 * (2 ^ (1)));
-% [testX, testY] = generateDnnTestSamples(gm, "cipic", s, false);
-% [testX, testY] = generateDnnTestSamples(gm, "kemar", 0);
-% [testX, testY] = generateDnnWaveformTestSampless(gm, "kemar", 0, true, 125, 500);
-% generateDnnTrainSamplesTimit(gm);
-% generateDnnTestSamplesTimit(gm);
-
-% gwn = load("cache/dnnTrainGwn_kemar_0_1900.mat");
-% bandpassed = load("cache/dnnTrainGwn_kemar_0_1900_bandpass_all_cf_bw.mat");
-% trainX = [bandpassed.trainX; gwn.trainX];
-% trainY = [bandpassed.trainY; gwn.trainY];
-% save("cache/dnnTrainGwn_kemar_0_1900_all.mat", "trainX", "trainY", "-v7.3");
-
-% trainX = [];
-% trainY = [];
-% for cf = [250, 2000, 4000]
-%     for bw = [1/6, 1/3, 1, 2]
-%         disp(cf + " " + bw);
-
-%         lb = cf / (2 ^ (bw/2));
-%         ub = cf * (2 ^ (bw/2));
-
-%         [x, y] = gm.env.genGwnIosr(...
-%             gm.locs_list, gm.locs_num * 100, ...
-%             gm.netTrainParam.audio_len, gm.env.fs, ...
-%             "cipic", 8, ...
-%             gm.netTrainParam.gwn_seed, ...
-%             true, lb, ub ...
-%         );
-%         trainX = [trainX; x];
-%         trainY = [trainY; y];
-%     end
-% end
-% disp("board band");
-% [x, y] = generateDnnTrainSamples(gm, "cipic", 8, false, 250 / (2 ^ (1)), 250 * (2 ^ (1)));
-% trainX = [trainX; x];
-% trainY = [trainY; y];
-% save("cache/dnnTrainGwn_cipic_8_2600_all.mat", "trainX", "trainY", "-v7.3");

@@ -135,15 +135,19 @@ classdef environment < handle
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%% Gen One Episode %%%%%%%%%%%%%%%%%%%%%%%%
-        function [blockL,blockR,nFrm] = genOneEpisodeCoch2(this,param,ind)
+        % function [blockL,blockR,nFrm] = genOneEpisodeCoch2(this,param,ind)
+        function [frmL,frmR,nFrm] = genOneEpisodeCoch2(this,param,ind)
             y_all = this.timit_train{param.audio_idx(ind),1};
             y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
             bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
-            gfb = gammatoneFilterBank([100 22000],param.nCh,44100);
-            gmtL = gfb(bi(:,1));
-            gmtR = gfb(bi(:,2));
+            gfb = gammatoneFilterBank([100 22000],128,44100);
+            gmtL = gfb(bi(:,2));
+            gmtR = gfb(bi(:,1));
 
-            global patchLength patchStride;
+            % global patchLength patchStride;
+            patchLength = floor(44100 * 8 / 1000);
+            patchStride = floor(44100 * 4 / 1000);
+
             frmL = []; frmR = [];
             for i=0:patchStride:length(bi)-patchLength
                 pL = pow2db(sum(gmtL(i+(1:patchLength),:).^2));
@@ -154,40 +158,19 @@ classdef environment < handle
             frmR = frmR';
             nFrm = size(frmL,2);
 
-            global blockLength blockShift;
-            blockL = []; blockR = [];
-            for i=0:blockShift:nFrm-blockLength
-                bL = reshape(frmL(:,i+(1:blockLength)),[],1);
-                bR = reshape(frmR(:,i+(1:blockLength)),[],1);
-                blockL = [blockL,bL];
-                blockR = [blockR,bR];
-            end
-            nFrm = size(blockL,2);            
+            % global blockLength blockShift;
+            % blockL = []; blockR = [];
+            % for i=0:blockShift:nFrm-blockLength
+            %     bL = reshape(frmL(:,i+(1:blockLength)),[],1);
+            %     bR = reshape(frmR(:,i+(1:blockLength)),[],1);
+            %     blockL = [blockL,bL];
+            %     blockR = [blockR,bR];
+            % end
+            % nFrm = size(blockL,2);            
         end
 
         function [frmL, frmR, nFrm] = genOneTrainEpisodeCochIOSR (this, param, ind)
             y_all = this.timit_train{param.audio_idx(ind),1};
-            y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
-
-            bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
-            
-            frmL = audio2cochlIOSR(...
-                bi(:,2), ...
-                this.fs, 100, 20000, 128, ...
-                8, 4 ...
-            );
-            frmR = audio2cochlIOSR(...
-                bi(:,1), ...
-                this.fs, 100, 20000, 128, ...
-                8, 4 ...
-            );
-            nFrm = size(frmL, 2);
-
-            assert(nFrm == size(frmR, 2));
-        end
-
-        function [frmL, frmR, nFrm] = genOneTestEpisodeCochIOSR (this, param, ind)
-            y_all = this.timit_test{param.audio_idx(ind),1};
             y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
 
             bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
@@ -370,6 +353,54 @@ classdef environment < handle
                 nFrm = size(frmL, 2);
 
                 assert(nFrm == size(frmR, 2));
+
+                X{i_iter}{1} = frmL;
+                X{i_iter}{2} = frmR;
+                Y{i_iter} = loc_idx;
+
+                tpb(i_iter);
+            end
+        end
+
+        function [X, Y] = genGwnToolbox (...
+            this, ...
+            locs_list, sample_size, audio_len, fs, ...
+            hrtf_dataset, hrtf_subject, ...
+            gwn_seed, ...
+            do_bandpass, lb, ub ...
+        )
+            rng(gwn_seed);
+            this.stiGenerator.reset_gwn(gwn_seed);
+            X = cell(sample_size, 2);
+            Y = cell(sample_size, 1);
+
+            gfb = gammatoneFilterBank([100 22000],128,44100);
+            patchLength = floor(this.fs * 8 / 1000);
+            patchStride = floor(this.fs * 4 / 1000);
+
+            tpb = textprogressbar(sample_size, "showremtime", true);
+            for i_iter = 1:sample_size
+                y = this.genStimuli('GWN',audio_len / fs);
+
+                if do_bandpass
+                    hf = design(fdesign.bandpass('N,F3dB1,F3dB2',4,lb,ub,fs));
+                    y = filter(hf, y);
+                end
+
+                loc_idx = randi(length(locs_list));
+                loc = locs_list(:, loc_idx);
+
+                bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);
+                gmtL = gfb(bi(:,2));
+                gmtR = gfb(bi(:,1));
+                frmL = []; frmR = [];
+                for i=0:patchStride:length(bi)-patchLength
+                    pL = pow2db(sum(gmtL(i+(1:patchLength),:).^2));
+                    pR = pow2db(sum(gmtR(i+(1:patchLength),:).^2));
+                    frmL = [frmL;pL]; frmR = [frmR;pR];
+                end
+                frmL = frmL';
+                frmR = frmR';
 
                 X{i_iter}{1} = frmL;
                 X{i_iter}{2} = frmR;

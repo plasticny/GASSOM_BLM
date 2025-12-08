@@ -87,6 +87,10 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, c
     truths = zeros(testSize, 1);
     cumu_resp = zeros(gm.locs_num, prod(gm.topo_space));
 
+    % gfb = gammatoneFilterBank([100 22000],128,44100);
+    % patchLength = floor(this.fs * 8 / 1000);
+    % patchStride = floor(this.fs * 4 / 1000);
+
     tpb = textprogressbar(testSize, 'showremtime', true);
     for i = 1:testSize
         gwn = testX{i};
@@ -95,7 +99,20 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, c
         % filter the gwn and spatalize
         gwn = filterStimuli(gwn, gm.env.fs, cf, bw_oct);
         loc = gm.locs_list(:, gt_loc_idx);
+
         bi = gm.env.sofa.spatMono(gwn, loc, "kemar", 0);
+
+        % gmtL = gfb(bi(:,2));
+        % gmtR = gfb(bi(:,1));
+        % frmL = []; frmR = [];
+        % for j=0:patchStride:length(bi)-patchLength
+        %     pL = pow2db(sum(gmtL(j+(1:patchLength),:).^2));
+        %     pR = pow2db(sum(gmtR(j+(1:patchLength),:).^2));
+        %     frmL = [frmL;pL]; frmR = [frmR;pR];
+        % end
+        % frmL = frmL';
+        % frmR = frmR';
+
         frmL = audio2cochlIOSR(...
             bi(:,2), ...
             gm.env.fs, 100, 20000, 128, ...
@@ -224,59 +241,42 @@ function [err] = rms (truths, predicts)
 end
 
 function visualizeFilteredStimuli (gm)
-    gwn = gm.env.genStimuli("GWN", gm.netTrainParam.audio_len / gm.env.fs);
-    % gwn = normalize(gwn) .* 0.02;
-    % y = load("/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/train_sample_checking/compare_toolbox_iosr/timit_sample.mat").y_all;
-
-    % y = y(7000:7000+8819,:);
-
-    % hf = design(fdesign.bandpass('N,F3dB1,F3dB2',4,100,3000,44100));
-    % gwn = filter(hf, gwn);
-
-    frmL = audio2cochlIOSR(...
-        gwn, ...
-        44100, 100, 20000, 128, ...
-        8, 4 ...
-    );
     figure;
-    imagesc(frmL);
+    plot(y);
 
-    % figure;
-    % plot(y);
-
-    % figure;
-    % subplot(4,3,1);
-    % plot(filterStimuli(y, gm.env.fs, 250, 1/6));
-    % title("CF:250Hz");
-    % ylabel("1/6 octave")
-    % subplot(4,3,2);
-    % plot(filterStimuli(y, gm.env.fs, 2000, 1/6));
-    % title("CF:2000Hz");
-    % subplot(4,3,3);
-    % plot(filterStimuli(y, gm.env.fs, 4000, 1/6));
-    % title("CF:4000Hz");
-    % subplot(4,3,4);
-    % plot(filterStimuli(y, gm.env.fs, 250, 1/3));
-    % ylabel("1/3 octave");
-    % subplot(4,3,5);
-    % plot(filterStimuli(y, gm.env.fs, 2000, 1/3));
-    % subplot(4,3,6);
-    % plot(filterStimuli(y, gm.env.fs, 4000, 1/3));
-    % subplot(4,3,7);
-    % plot(filterStimuli(y, gm.env.fs, 250, 1));
-    % ylabel("1 octave");
-    % subplot(4,3,8);
-    % plot(filterStimuli(y, gm.env.fs, 2000, 1));
-    % subplot(4,3,9);
-    % plot(filterStimuli(y, gm.env.fs, 4000, 1));
-    % subplot(4,3,10);
-    % plot(filterStimuli(y, gm.env.fs, 250, 2));
-    % ylabel("2 octave");
-    % subplot(4,3,11);
-    % plot(filterStimuli(y, gm.env.fs, 2000, 2));
-    % xlabel("data point")
-    % subplot(4,3,12);
-    % plot(filterStimuli(y, gm.env.fs, 4000, 2));
+    figure;
+    subplot(4,3,1);
+    plot(filterStimuli(y, gm.env.fs, 250, 1/6));
+    title("CF:250Hz");
+    ylabel("1/6 octave")
+    subplot(4,3,2);
+    plot(filterStimuli(y, gm.env.fs, 2000, 1/6));
+    title("CF:2000Hz");
+    subplot(4,3,3);
+    plot(filterStimuli(y, gm.env.fs, 4000, 1/6));
+    title("CF:4000Hz");
+    subplot(4,3,4);
+    plot(filterStimuli(y, gm.env.fs, 250, 1/3));
+    ylabel("1/3 octave");
+    subplot(4,3,5);
+    plot(filterStimuli(y, gm.env.fs, 2000, 1/3));
+    subplot(4,3,6);
+    plot(filterStimuli(y, gm.env.fs, 4000, 1/3));
+    subplot(4,3,7);
+    plot(filterStimuli(y, gm.env.fs, 250, 1));
+    ylabel("1 octave");
+    subplot(4,3,8);
+    plot(filterStimuli(y, gm.env.fs, 2000, 1));
+    subplot(4,3,9);
+    plot(filterStimuli(y, gm.env.fs, 4000, 1));
+    subplot(4,3,10);
+    plot(filterStimuli(y, gm.env.fs, 250, 2));
+    ylabel("2 octave");
+    subplot(4,3,11);
+    plot(filterStimuli(y, gm.env.fs, 2000, 2));
+    xlabel("data point")
+    subplot(4,3,12);
+    plot(filterStimuli(y, gm.env.fs, 4000, 2));
 end
 
 map_width = 10;
@@ -419,17 +419,3 @@ legend({"CF:250Hz", "CF:2000Hz", "CF:4000Hz"});
 %     "resp_2000_1_6", "resp_2000_1_3", "resp_2000_1", "resp_2000_2", ...
 %     "resp_4000_1_6", "resp_4000_1_3", "resp_4000_1", "resp_4000_2" ...
 % )
-
-% gwn = gm.env.genStimuli("GWN", gm.netTrainParam.audio_len / gm.env.fs);
-% ub = 1000;
-% hf = design(fdesign.bandpass('N,F3dB1,F3dB2',4,125,ub,44100));
-% y = filter(hf, gwn);
-% frmL = audio2cochlIOSR(...
-%     gwn, ...
-%     44100, 100, 20000, 128, ...
-%     8, 4 ...
-% );
-% figure;
-% imagesc(frmL);
-% set(gca, "YDir", "normal");
-% title("bandpass (125, " + ub + ")");

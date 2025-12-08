@@ -360,154 +360,6 @@ function plotCochl (frm, cfs, title_str, cmin, cmax)
     set(gca, 'YDir', 'normal');
 end
 
-function visualizeHtfs (gm, ind, azimuth)
-    save_folder = 'chp6/hrtf_sample/' + string(azimuth) + '/';
-
-    y = gm.env.timit_train{gm.somTrainParam.audio_idx(ind),1};
-
-    loc = gm.env.locs_list(:, gm.somTrainParam.locs_rand(ind));
-    loc(1) = azimuth;
-
-    bi = gm.env.sofa.spatMono(y, loc, gm.somTrainParam.hrtf, gm.somTrainParam.subject);
-    biL = bi(:,2);
-    biR = bi(:,1);
-
-    audiowrite(save_folder + 'origin.wav', y, gm.fs);
-    audiowrite(save_folder + 'left' + string(azimuth) + '.wav', biL, gm.fs);
-    audiowrite(save_folder + 'right' + string(azimuth) + '.wav', biR, gm.fs);
-
-    %% visualize waveform
-
-    time = ((1/gm.fs):(1/gm.fs):(length(y)/gm.fs));
-
-    yMax = max([y;biL;biR], [], "all");
-    yMin = min([y;biL;biR], [], "all");
-
-    figure;
-    subplot(3, 1, 1);
-    plot(time, y);
-    ylim([yMin yMax]);
-    xlabel("time (s)");
-    title("before hrtf with azimuth " + loc(1));
-
-    subplot(3, 1, 2);
-    plot(time, biL);
-    title("left");
-    xlabel("time (s)");
-    ylim([yMin yMax]);
-    
-    subplot(3, 1, 3);
-    plot(time, biR);
-    title("right");
-    xlabel("time (s)");
-    ylim([yMin yMax]);
-
-    saveas(gcf, save_folder + "waveform.png");
-
-    %% viuslaize cochleagram
-
-    [frm, ~] = audio2cochlIOSR(...
-        y, ...
-        gm.env.fs, 100, 20000, 128, ...
-        8, 4 ...
-    );
-
-    [frmL, ~] = audio2cochlIOSR(...
-        biL, ...
-        gm.env.fs, 100, 20000, 128, ...
-        8, 4 ...
-    );
-
-    [frmR, cfs] = audio2cochlIOSR(...
-        biR, ...
-        gm.env.fs, 100, 20000, 128, ...
-        8, 4 ...
-    );
-
-    sample_len = size(frmL, 1);
-    normalized = normalize([frmL; frmR; frm]);
-    frmL = normalized(1:sample_len,:);
-    frmR = normalized(sample_len+1:2*sample_len,:);
-    frm = normalized(2*sample_len:end,:);
-
-    frmMax = max(normalized,[],"all");
-    frmMin = min(normalized,[],"all");
-    % frmMax = max(frm, [], "all");
-    % frmMin = min(frm, [], "all");
-
-    figure;
-    subplot(3, 1, 1);
-    plotCochl(frm, cfs, "origin", frmMin, frmMax);
-    subplot(3, 1, 2);
-    plotCochl(frmL, cfs, "left", frmMin, frmMax);
-    subplot(3, 1, 3);
-    plotCochl(frmR, cfs, "right", frmMin, frmMax);
-
-    saveas(gcf, save_folder + "cochleagram.png");
-end
-
-function visualizeGassomTrainingSample (gm, ind)
-    y_all = gm.env.timit_train{gm.somTrainParam.audio_idx(ind),1};
-    y = y_all(gm.somTrainParam.audio_bgn(ind,1)+(1:gm.somTrainParam.audio_len));
-
-    [frm, cfs] = audio2cochlIOSR(...
-        y, ...
-        gm.env.fs, 100, 20000, 128, ...
-        8, 4 ...
-    );
-
-    loc = gm.env.locs_list(:, gm.somTrainParam.locs_rand(ind));
-    [frmL, frmR, ~] = gm.env.genOneTrainEpisodeCochIOSR(gm.somTrainParam, ind);
-
-    % normalize
-    sample_len = size(frmL, 1);
-    nm = normalize([frmL; frmR; frm]);
-    frmL = nm(1:sample_len,:);
-    frmR = nm(sample_len+1:2*sample_len,:);
-    frm = nm(2*sample_len:end,:);
-    % nm = norm([frmL;frmR]);
-    % frmL = frmL/nm;
-    % frmR = frmR/nm;
-
-    blkL = frmL(:,1:5);
-    blkR = frmR(:,1:5);
-
-    frmMax = max(nm,[],"all");
-    frmMin = min(nm,[],"all");
-    blkMax = max([blkL; blkR],[],"all");
-    blkMin = min([blkL; blkR],[],"all");
-
-    figure;
-    subplot(1, 1, 1);
-    bar(...
-        1:19, ...
-        histcounts(gm.somTrainParam.locs_rand, 'BinMethod', 'integers', 'BinLimits', [1 19]), ...
-        'FaceColor', 'blue' ...
-    );
-    title("counting of every sound location");
-    
-    figure;
-    subplot(1, 1, 1);
-    plot(y);
-    title("timit segment waveform");
-
-    figure;
-    subplot(3, 1, 1);
-    plotCochl(frm, cfs, "normalized timit segment", frmMin, frmMax);
-    subplot(3, 1, 2);
-    plotCochl(frmL, cfs, "normalized left (azimuth " + loc(1) + ")", frmMin, frmMax);
-    subplot(3, 1, 3);
-    plotCochl(frmR, cfs, "normalized right (azimuth " + loc(1) + ")", frmMin, frmMax);
-    
-    figure;
-    subplot(3, 1, 1);
-    plotCochl(blkL, cfs, "a chunk (5 frames) of normalized left", blkMin, blkMax);
-    subplot(3, 1, 2);
-    plotCochl(blkR, cfs, "a chunk (5 frames) of normalized right", blkMin, blkMax);
-    subplot(3, 1, 3);
-    plotCochl([blkL blkR], cfs, "sample that feed into gassom", blkMin, blkMax);
-end
-
 function visualizeDnnTrainingSample (gm, ind, chunk_size)
     trainSamples = load("temp_data/dnnTrainGwn.mat");
 
@@ -634,13 +486,12 @@ save_folder = "chp4/kemar_online/";
 % if ~exist(save_folder,'dir') mkdir(save_folder); end
 
 %%% train gassom
-% gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
+gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
 % gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
-% winners = gm.trainGASSOM_cochleagram_IOSR(chunk_size, save_folder);
-% winners = gm.trainGASSOM_cochleagram_IOSR2(chunk_size, "cache/somTrainSamples_kemar_0_19_50000.mat", save_folder);
-% gsm = gm.gsm{1};
-% save(save_folder + "gsm.mat", "gsm");
-% visualizeCochlMap(gm, chunk_size);
+winners = gm.trainGASSOM_cochleagram2(chunk_size, "cache/somTrainSamples_kemar_0_19_50000.mat", save_folder);
+gsm = gm.gsm{1};
+save(save_folder + "gsm.mat", "gsm");
+visualizeCochlMap(gm, chunk_size);
     
 % checkResponse(gm, chunk_size, "cache/dnnTestTimit_kemar_0.mat");
 % checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
@@ -659,7 +510,7 @@ save_folder = "chp4/kemar_online/";
 % [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_9_2600_bandpass_all_cf_bw.mat");
 [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_kemar_0_1900.mat");
 % trained_dnn = trainDNNTimit(gm, chunk_size, "cache/dnnTrainTimit_cipic_9_2600.mat");
-% save(save_folder + "dnn.mat", "trained_dnn");
+save(save_folder + "dnn.mat", "trained_dnn");
 % save(save_folder + "dnn_train_info.mat", "train_info");
 
 %%% test model
