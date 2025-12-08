@@ -77,7 +77,7 @@ classdef environment < handle
             frmIndex = bsxfun(@plus,(0:this.patch_stride:length(biL)-this.patch_len)',...
                 1:this.patch_len);
             frmL = (biL(frmIndex))'; frmR = (biR(frmIndex))';            
-            frm = normalize_data([frmL;frmR]);
+            frm = normalize_data([frmL;frmR]); % z-score normalization
             frmL = frm(1:this.patch_len,:);
             frmR = frm(this.patch_len+1:end,:);
             nFrm = size(frm,2);
@@ -167,6 +167,27 @@ classdef environment < handle
 
         function [frmL, frmR, nFrm] = genOneTrainEpisodeCochIOSR (this, param, ind)
             y_all = this.timit_train{param.audio_idx(ind),1};
+            y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
+
+            bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
+            
+            frmL = audio2cochlIOSR(...
+                bi(:,2), ...
+                this.fs, 100, 20000, 128, ...
+                8, 4 ...
+            );
+            frmR = audio2cochlIOSR(...
+                bi(:,1), ...
+                this.fs, 100, 20000, 128, ...
+                8, 4 ...
+            );
+            nFrm = size(frmL, 2);
+
+            assert(nFrm == size(frmR, 2));
+        end
+
+        function [frmL, frmR, nFrm] = genOneTestEpisodeCochIOSR (this, param, ind)
+            y_all = this.timit_test{param.audio_idx(ind),1};
             y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
 
             bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
@@ -279,7 +300,8 @@ classdef environment < handle
             this, ...
             locs_list, sample_size, audio_len, fs, ...
             hrtf_dataset, hrtf_subject, ...
-            gwn_seed ...
+            gwn_seed, ...
+            do_bandpass, lb, ub ...
         )
             rng(gwn_seed);
             this.stiGenerator.reset_gwn(gwn_seed);
@@ -289,6 +311,12 @@ classdef environment < handle
             tpb = textprogressbar(sample_size, "showremtime", true);
             for i_iter = 1:sample_size
                 y = this.genStimuli('GWN',audio_len / fs);
+
+                if do_bandpass
+                    hf = design(fdesign.bandpass('N,F3dB1,F3dB2',4,lb,ub,fs));
+                    y = filter(hf, y);
+                end
+
                 loc_idx = randi(length(locs_list));
                 loc = locs_list(:, loc_idx);
                 bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);
@@ -308,7 +336,8 @@ classdef environment < handle
             this, ...
             locs_list, sample_size, audio_len, fs, ...
             hrtf_dataset, hrtf_subject, ...
-            gwn_seed ...
+            gwn_seed, ...
+            do_bandpass, lb, ub ...
         )
             rng(gwn_seed);
             this.stiGenerator.reset_gwn(gwn_seed);
@@ -318,6 +347,12 @@ classdef environment < handle
             tpb = textprogressbar(sample_size, "showremtime", true);
             for i_iter = 1:sample_size
                 y = this.genStimuli('GWN',audio_len / fs);
+
+                if do_bandpass
+                    hf = design(fdesign.bandpass('N,F3dB1,F3dB2',4,lb,ub,fs));
+                    y = filter(hf, y);
+                end
+
                 loc_idx = randi(length(locs_list));
                 loc = locs_list(:, loc_idx);
                 bi = this.sofa.spatMono(y, loc, hrtf_dataset, hrtf_subject);

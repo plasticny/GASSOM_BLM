@@ -62,16 +62,16 @@ classdef GASSOM_Online  < handle
             obj.sigma_n = 0.2;
             obj.sigma_w = 2;
             
-            % obj.alpha_A = 10; % magnitude
-            % obj.alpha_C = 1e-3;
-            obj.alpha_A = 8e-4; % magnitude
-            obj.alpha_C = 1e-5;
+            % obj.alpha_A = 8e-4; % magnitude
+            % obj.alpha_C = 1e-5;
+            obj.alpha_A = 0.08; % magnitude
+            obj.alpha_C = 1e-4;
 
             % obj.sigma_A = 2;
             % obj.sigma_C = .1;
             % obj.sigma_A = 2;
-            obj.sigma_A = 4;
-            obj.sigma_C = .4;
+            obj.sigma_A = 2;
+            obj.sigma_C = .2;
 
             % obj.tconst = 10000;         
             % obj.tconst = 10000;
@@ -113,7 +113,7 @@ classdef GASSOM_Online  < handle
 
             % this.Proj = this.coef{1}.^2 + this.coef{2}.^2; %P[n_subspace,batch_size]
             this.Proj = this.coef{1}.^2;
-            this.Proj = this.Proj./max(this.Proj);
+            % this.Proj = this.Proj./max(this.Proj);
 
             % disp(max(this.Proj, [], "all"));
             assert(max(this.Proj, [], "all") <= 1);

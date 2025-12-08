@@ -58,7 +58,7 @@ classdef gassomMapVideoMaker < handle
                 frame = im2frame(im);
                 writeVideo(this.videoWriters{1}, frame)
             else
-                for i=1:1:2
+                for i=1:1:1
                     this.saveShotImageWaveform(gm, i)
                     im = imread(this.shotImgPath);
                     frame = im2frame(im);
@@ -73,7 +73,11 @@ classdef gassomMapVideoMaker < handle
             c = gm.topo_space(2);
             for i=1:r*c
                 subplot(r,c,i);
-                imagesc(reshape(gm.gsm{1}.bases{1}(:,i), [], this.chunk_size * 2));
+                b = reshape(gm.gsm{1}.bases{1}(:,i), [], this.chunk_size * 2);
+                if b(1) < 0
+                    b = -1 * b;
+                end
+                imagesc(b);
                 colormap('jet');
                 axis off;
                 set(gca, 'YDir', 'normal');

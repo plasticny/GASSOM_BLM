@@ -311,43 +311,46 @@ function [errs, cm] = rms (truths, predicts)
 end
 
 function gassom_wenzel()
-    map_size = 16;
+    % map_size = 16;
+    map_size = 10;
     chunk_size = 10;
 
-    computation_subjects = [9, 20, 40, 61, 65, 124, 134, 152, 154, 165];
-    test_subjects = [
-        [8, 15, 20, 44, 51, 65, 124, 131, 137, 155];
-        [3, 18, 27, 48, 61, 126, 147, 153, 154, 163];
-        [10, 12, 17, 27, 51, 61, 124, 131, 133, 163];
-        [9, 12, 19, 33, 40, 58, 126, 131, 137, 158];
-        [8, 11, 19, 27, 59, 137, 152, 153, 154, 165];
-        [8, 20, 28, 58, 61, 65, 119, 126, 162, 163];
-        [20, 44, 51, 65, 119, 126, 135, 137, 147, 153];
-        [3, 18, 20, 27, 60, 61, 133, 134, 154, 156];
-        [18, 21, 28, 33, 44, 48, 50, 126, 155, 162];
-        [18, 21, 28, 44, 50, 65, 124, 127, 134, 135]
-    ];
+    % computation_subjects = [9, 20, 40, 61, 65, 124, 134, 152, 154, 165];
+    % test_subjects = [
+    %     [8, 15, 20, 44, 51, 65, 124, 131, 137, 155];
+    %     [3, 18, 27, 48, 61, 126, 147, 153, 154, 163];
+    %     [10, 12, 17, 27, 51, 61, 124, 131, 133, 163];
+    %     [9, 12, 19, 33, 40, 58, 126, 131, 137, 158];
+    %     [8, 11, 19, 27, 59, 137, 152, 153, 154, 165];
+    %     [8, 20, 28, 58, 61, 65, 119, 126, 162, 163];
+    %     [20, 44, 51, 65, 119, 126, 135, 137, 147, 153];
+    %     [3, 18, 20, 27, 60, 61, 133, 134, 154, 156];
+    %     [18, 21, 28, 33, 44, 48, 50, 126, 155, 162];
+    %     [18, 21, 28, 44, 50, 65, 124, 127, 134, 135]
+    % ];
+    cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
 
-    for computation_subject_idx = 1:1
+    for computation_subject_idx = 2:2
         % computation_subject_idx = 1;
-        computation_subject = computation_subjects(computation_subject_idx);
+        % computation_subject = computation_subjects(computation_subject_idx);
+        computation_subject = cipic_subjects.individual_subjects(computation_subject_idx);
 
         disp("run wenzel on subject " + computation_subject);
 
-        save_folder = "chp6/comptational_model_16x16/subject_" + computation_subject + "/";
-        % save_folder = "chp6/temp/";
+        % save_folder = "chp6/comptational_model_16x16/subject_" + computation_subject + "/";
+        save_folder = "chp4/cipic_360/cochleagram/10x10_10/" + computation_subject + "/";
         gm = loadGassom([map_size, map_size], 5e4, save_folder + "gsm.mat", chunk_size, "cipic", computation_subject);
-        % trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
-        [trained_dnn, ~] = trainDNN(gm, chunk_size, "cipic", computation_subject);
-        save(save_folder + "dnn_no_norm.mat", "trained_dnn");
+        trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
+        % [trained_dnn, ~] = trainDNN(gm, chunk_size, "cipic", computation_subject);
+        % save(save_folder + "dnn_no_norm.mat", "trained_dnn");
 
-        result_save_folder = "chp6/result/subject_" + computation_subject + "/individual/";
-        if ~exist(result_save_folder,'dir')
-            mkdir(result_save_folder);
-        end
+        % result_save_folder = "chp6/result/subject_" + computation_subject + "/individual/";
+        % if ~exist(result_save_folder,'dir')
+        %     mkdir(result_save_folder);
+        % end
         [predicts, truths, cumu_resp] = test(gm, trained_dnn, computation_subject, chunk_size);
         [errs, cm] = rms(truths, predicts);
-        saveas(gca, result_save_folder + "confusion.png");
+        % saveas(gca, result_save_folder + "confusion.png");
         figure;
         bar([
             -170, -160, -150, -140, -125, ...
@@ -360,21 +363,21 @@ function gassom_wenzel()
         ylim([-5 180]);
         xlabel("Target Azimuth/deg");
         ylabel("RMS/deg");
-        saveas(gca, result_save_folder + "rms.png");
-        figure;
-        imagesc(cumu_resp);
-        saveas(gca, result_save_folder + "response.png");
-        save(result_save_folder + "result.mat", "predicts", "truths", "errs", "cumu_resp");
+        % saveas(gca, result_save_folder + "rms.png");
+        % figure;
+        % imagesc(cumu_resp);
+        % saveas(gca, result_save_folder + "response.png");
+        % save(result_save_folder + "result.mat", "predicts", "truths", "errs", "cumu_resp");
 
-        for test_subject = test_subjects(computation_subject_idx,:)
+        for test_subject = cipic_subjects.non_individual_subjects(computation_subject_idx,:)
             disp(test_subject);
-            result_save_folder = "chp6/result/subject_" + computation_subject + "/subject_" + test_subject + "/";
-            if ~exist(result_save_folder,'dir')
-                mkdir(result_save_folder);
-            end
+            % result_save_folder = "chp6/result/subject_" + computation_subject + "/subject_" + test_subject + "/";
+            % if ~exist(result_save_folder,'dir')
+            %     mkdir(result_save_folder);
+            % end
             [predicts, truths, cumu_resp] = test(gm, trained_dnn, test_subject, chunk_size);
             [errs, cm] = rms(truths, predicts);
-            saveas(gca, result_save_folder + "confusion.png");
+            % saveas(gca, result_save_folder + "confusion.png");
             figure;
             bar([
                 -170, -160, -150, -140, -125, ...
@@ -387,11 +390,11 @@ function gassom_wenzel()
             ylim([-5 180]);
             xlabel("Target Azimuth/deg");
             ylabel("RMS/deg");
-            saveas(gca, result_save_folder + "rms.png");
-            figure;
-            imagesc(cumu_resp);
-            saveas(gca, result_save_folder + "response.png");
-            save(result_save_folder + "result.mat", "predicts", "truths", "errs", "cumu_resp");
+            % saveas(gca, result_save_folder + "rms.png");
+            % figure;
+            % imagesc(cumu_resp);
+            % saveas(gca, result_save_folder + "response.png");
+            % save(result_save_folder + "result.mat", "predicts", "truths", "errs", "cumu_resp");
         end
     end
 end

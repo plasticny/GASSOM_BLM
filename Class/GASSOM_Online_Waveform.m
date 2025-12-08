@@ -61,17 +61,17 @@ classdef GASSOM_Online_Waveform < handle
             obj.sigma_n = 0.2;
             obj.sigma_w = 2;
             
-            obj.alpha_A = 8e-2; % magnitude
-            obj.alpha_C = 1e-3;
-            obj.sigma_A = 6;
-            obj.sigma_C = .6;
-            obj.tconst = 8000;
-
-            % obj.alpha_A = 1; % magnitude
+            % obj.alpha_A = 8e-2; % magnitude
             % obj.alpha_C = 1e-3;
-            % obj.sigma_A = 2;
-            % obj.sigma_C = .1;
+            % obj.sigma_A = 6;
+            % obj.sigma_C = .6;
             % obj.tconst = 8000;
+
+            obj.alpha_A = 8e-2; % magnitude
+            obj.alpha_C = 1e-5;
+            obj.sigma_A = 2;
+            obj.sigma_C = .2;
+            obj.tconst = 10000;
             
             obj.transProb =  genTransProbG(obj.topo_subspace,obj.sigmaTrans, obj.alphaTrans,0); 
             np = rand(obj.n_subspace,1);    
@@ -194,6 +194,10 @@ classdef GASSOM_Online_Waveform < handle
             Bases{2} = Bases{2} - bsxfun(@times,this.bases{1}, sum(this.bases{1}.*Bases{2}));
             this.bases{2} = bsxfun(@rdivide, Bases{2}, sqrt(sum(Bases{2}.^2)));            
             
+            % normalize bases
+            this.bases{1}=this.bases{1}./vecnorm(this.bases{1});
+            this.bases{2}=this.bases{2}./vecnorm(this.bases{2});
+
             this.iter = this.iter+1; 
             this.updatecount = this.updatecount+1;
         end

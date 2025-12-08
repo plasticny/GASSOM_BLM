@@ -96,6 +96,7 @@ classdef SOFALoader < handle
         end
               
         function [out] = spatMono(this,y,loc,dataset,subject)
+            assert(dataset == "cipic");
             % one hrir mean diotic binaural signals
             if size(y,1) == 1, y = y'; end
             azim = loc(1); elev = loc(2);
@@ -108,6 +109,8 @@ classdef SOFALoader < handle
                     out = SOFAspat(y,this.listen{sub_ind,1},azim,elev);
                 case 'kemar'
                     out = SOFAspat(y,this.kemar{1,1},azim,elev);
+                otherwise
+                    assert(false, "unexpected dataset " + dataset);
             end
             out = out(1:length(y),:);
         end

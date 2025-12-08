@@ -5,6 +5,8 @@
 *.asv
 *.pdf
 *.odp
+*.wav
+*note.txt
 dev.m
 
 chp4/cochleagram/result

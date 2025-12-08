@@ -49,34 +49,52 @@ classdef GASSOM_Online_Cochleagram < handle
             obj.max_iter = PARAM{3};
             
             %default
-            obj.dim_patch = [obj.dim_patch_single 2];
-            obj.n_subspace = prod(obj.topo_subspace);       
-            obj.length_basis = prod(obj.dim_patch);           
-            % obj.size_subspace = 2;
-            obj.size_subspace = 1;
-            obj.n_basis = obj.size_subspace * obj.n_subspace;                
+            % obj.dim_patch = [obj.dim_patch_single 2];
+            % obj.n_subspace = prod(obj.topo_subspace);       
+            % obj.length_basis = prod(obj.dim_patch);           
+            % % obj.size_subspace = 2;
+            % obj.size_subspace = 1;
+            % obj.n_basis = obj.size_subspace * obj.n_subspace;                
             
+            % obj.sigmaTrans = 1.25;
+            % obj.alphaTrans = 0.4; % 0 -> no uniform
+            % obj.updatecount = 1;
+            % obj.sigma_n = 0.2;
+            % obj.sigma_w = 2;
+            
+            % % obj.alpha_A = 10; % magnitude
+            % % obj.alpha_C = 1e-3;
+            % obj.alpha_A = 8e-4; % magnitude
+            % obj.alpha_C = 1e-5;
+
+            % obj.sigma_A = 2;
+            % obj.sigma_C = .2;
+            % % obj.sigma_A = 2;
+            % % obj.sigma_A = 3.2;
+            % % obj.sigma_C = .32;
+
+            % % obj.tconst = 8000;
+            % % obj.tconst = 10000;
+            % obj.tconst = 40000;
+
+            obj.n_subspace = prod(obj.topo_subspace);
+            obj.dim_patch = [obj.dim_patch_single 2];
+            
+            obj.length_basis = prod(obj.dim_patch_single);
+           
+            obj.size_subspace = 2;
+            obj.n_basis = obj.size_subspace * obj.n_subspace;
+            obj.alpha_A = 8e-2;   
+            obj.alpha_C = 1e-4; 
+            obj.tconst = 1000*10;
+            obj.sigma_A = 2;
+            obj.tconst_n = 5000;
+            obj.sigma_C = 0.2;
             obj.sigmaTrans = 2.25;
-            obj.alphaTrans = 0.4; % 0 -> no uniform
+            obj.alphaTrans = 0.4;
             obj.updatecount = 1;
             obj.sigma_n = 0.2;
             obj.sigma_w = 2;
-            
-            % obj.alpha_A = 10; % magnitude
-            % obj.alpha_C = 1e-3;
-            obj.alpha_A = 8e-4; % magnitude
-            obj.alpha_C = 1e-5;
-
-            % obj.sigma_A = 2;
-            % obj.sigma_C = .1;
-            % obj.sigma_A = 2;
-            obj.sigma_A = 3.2;
-            obj.sigma_C = .32;
-
-            % obj.tconst = 10000;
-            % obj.tconst = 6250;
-            % obj.tconst = 8000;
-            obj.tconst = 40000;
             
             obj.transProb =  genTransProbG(obj.topo_subspace,obj.sigmaTrans, obj.alphaTrans,0); 
             np = rand(obj.n_subspace,1);    
@@ -88,7 +106,7 @@ classdef GASSOM_Online_Cochleagram < handle
             A = randn(obj.length_basis, obj.size_subspace, obj.n_subspace);
             A = orthonormalize_subspace (A);
             obj.bases{1}= squeeze(A(:,1,:));
-            % obj.bases{2}= squeeze(A(:,2,:));
+            obj.bases{2}= squeeze(A(:,2,:));
 
             %     save(save_name,'A','np');
             % else
@@ -109,15 +127,18 @@ classdef GASSOM_Online_Cochleagram < handle
         function [winners] = assomEncode(this,X)          
             batch_size = size(X,2);
 
+            % size of this.bases{1}': prod(topo_space) dim_patch
+            % size of X: dim_patch batch_size
+            % size of this.coef{1}: prod(topo_space) batch_size
+            % this line do the dot product
             this.coef{1} = this.bases{1}'*X; %[n_subspace batch_size]
             % this.coef{2} = this.bases{2}'*X;
 
             % this.Proj = this.coef{1}.^2 + this.coef{2}.^2; %P[n_subspace,batch_size]
             this.Proj = this.coef{1}.^2;
-            this.Proj = this.Proj./max(this.Proj);
+            % this.Proj = this.Proj./max(this.Proj);
 
-            % disp(max(this.Proj, [], "all"));
-            assert(max(this.Proj, [], "all") <= 1);
+            % assert(max(this.Proj, [], "all") <= 1);
             
             Perr = ones(size(this.Proj))-this.Proj;
             emissProb=exp(-this.Proj/(2*this.sigma_w^2)).*exp(-Perr/(2*this.sigma_n^2));      
@@ -136,10 +157,12 @@ classdef GASSOM_Online_Cochleagram < handle
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
         function [resp] = getResponse(this,X,ind)
             if nargin<3
+                % size of coef1: prod(topo_space) batch_size
                 coef1 = this.bases{1}'*X;
                 % coef2 = this.bases{2}'*X;
                 % resp = coef1.^2 + coef2.^2;
                 resp = coef1.^2;
+                % resp = ((this.bases{1}') .^ 2)*X;
             else
                 coef1 = this.bases{1}(:,ind)'*X;
                 % coef2 = this.bases{2}(:,ind)'*X;
@@ -168,6 +191,10 @@ classdef GASSOM_Online_Cochleagram < handle
             sigma_h = (this.sigma_A*exp(-this.iter/this.tconst)+this.sigma_C);           
            
             batch_size = size(X,2);
+
+            % 1 4 7
+            % 2 5 8
+            % 3 6 9
             [cj,ci] = ind2sub(this.topo_subspace,this.winners);   
             k = 1:this.n_subspace;
             [kj,ki] = ind2sub(this.topo_subspace,k);
