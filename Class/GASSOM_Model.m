@@ -448,47 +448,47 @@ classdef GASSOM_Model < handle
                 nFrm = size(frmL, 2);
                 assert(nFrm == size(frmR, 2));
 
-                X = [];
-                for j = 0:chunk_shift:nFrm-chunk_size
-                    chkL = frmL(:,j+(1:chunk_size));
-                    chkR = frmR(:,j+(1:chunk_size));
+                % X = [];
+                % for j = 0:chunk_shift:nFrm-chunk_size
+                %     chkL = frmL(:,j+(1:chunk_size));
+                %     chkR = frmR(:,j+(1:chunk_size));
 
-                    % if mean(chkL, "all") <= -70 || mean(chkR, "all") <= -70
-                    %     continue
-                    % end
+                %     % if mean(chkL, "all") <= -70 || mean(chkR, "all") <= -70
+                %     %     continue
+                %     % end
 
-                    % single_len = size(chkL,1);
-                    % rm = normalize([chkL;chkR]);
-                    % rm = [chkL;chkR];
-                    % rm = rm + abs(min(rm, [], "all"));
-                    % chkL = rm(1:single_len,:);
-                    % chkR = rm(single_len+1:end,:);
+                %     % single_len = size(chkL,1);
+                %     % rm = normalize([chkL;chkR]);
+                %     % rm = [chkL;chkR];
+                %     % rm = rm + abs(min(rm, [], "all"));
+                %     % chkL = rm(1:single_len,:);
+                %     % chkR = rm(single_len+1:end,:);
 
-                    x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
-                    x = x-ones(size(x,1),1)*mean(x,1);
-                    x = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
-                    % x = x / norm(x);
+                %     x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
+                %     x = x-ones(size(x,1),1)*mean(x,1);
+                %     x = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
+                %     % x = x / norm(x);
 
-                    % assert(min(x, [], "all") >= 0);
+                %     % assert(min(x, [], "all") >= 0);
 
-                    X = [X x];
-                end
+                %     X = [X x];
+                % end
 
-                % chkIdx = 0:chunk_shift:nFrm-chunk_size;
-                % j = chkIdx(randi(length(chkIdx)));
+                chkIdx = 0:chunk_shift:nFrm-chunk_size;
+                j = chkIdx(randi(length(chkIdx)));
 
-                % frmL = frmL(:,j+(1:chunk_size));
-                % frmR = frmR(:,j+(1:chunk_size));
+                frmL = frmL(:,j+(1:chunk_size));
+                frmR = frmR(:,j+(1:chunk_size));
 
-                % % single_len = size(frmL,1);
-                % % rm = normalize([frmL;frmR]);
-                % % rm = rm + abs(min(rm, [], "all"));
-                % % frmL = rm(1:single_len,:);
-                % % frmR = rm(single_len+1:end,:);
+                % single_len = size(frmL,1);
+                % rm = normalize([frmL;frmR]);
+                % rm = rm + abs(min(rm, [], "all"));
+                % frmL = rm(1:single_len,:);
+                % frmR = rm(single_len+1:end,:);
 
-                % x = [reshape(frmL, [], 1);reshape(frmR, [], 1)];     
-                % x = x-ones(size(x,1),1)*mean(x,1);
-                % X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
+                x = [reshape(frmL, [], 1);reshape(frmR, [], 1)];     
+                x = x-ones(size(x,1),1)*mean(x,1);
+                X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
                 % X = x / norm(x);
 
                 % assert(min(X, [], "all") >= 0);

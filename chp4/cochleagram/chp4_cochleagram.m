@@ -622,24 +622,24 @@ function [err] = rms (truths, predicts)
     err = sqrt(sum((predicts - truths) .^ 2) / length(truths));
 end
 
-hrtf_database = "cipic";
-hrtf_subject = 8;
+hrtf_database = "kemar";
+hrtf_subject = 0;
 map_width = 10;
 chunk_size = 10;
 
 % save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
-save_folder = "/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/chp4/cipic_360/cochleagram/10x10_10/8/";
-% save_folder = "chp4/kemar_online/";
+% save_folder = "/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/chp4/cipic_360/cochleagram/10x10_10/8/";
+save_folder = "chp4/kemar_online/";
 
 % if ~exist(save_folder,'dir') mkdir(save_folder); end
 
 %%% train gassom
-gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
+% gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
 % gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
 % winners = gm.trainGASSOM_cochleagram_IOSR(chunk_size, save_folder);
-winners = gm.trainGASSOM_cochleagram_IOSR2(chunk_size, "cache/somTrainSamples_cipic_8_26_50000.mat", save_folder);
-gsm = gm.gsm{1};
-save(save_folder + "gsm.mat", "gsm");
+% winners = gm.trainGASSOM_cochleagram_IOSR2(chunk_size, "cache/somTrainSamples_kemar_0_19_50000.mat", save_folder);
+% gsm = gm.gsm{1};
+% save(save_folder + "gsm.mat", "gsm");
 % visualizeCochlMap(gm, chunk_size);
     
 % checkResponse(gm, chunk_size, "cache/dnnTestTimit_kemar_0.mat");
@@ -657,19 +657,19 @@ save(save_folder + "gsm.mat", "gsm");
 %%% train dnn
 % generateDnnSamples(gm);
 % [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_9_2600_bandpass_all_cf_bw.mat");
-[trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_8_2600.mat");
+[trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_kemar_0_1900.mat");
 % trained_dnn = trainDNNTimit(gm, chunk_size, "cache/dnnTrainTimit_cipic_9_2600.mat");
-save(save_folder + "dnn.mat", "trained_dnn");
+% save(save_folder + "dnn.mat", "trained_dnn");
 % save(save_folder + "dnn_train_info.mat", "train_info");
 
 %%% test model
 % trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
 % [mae, predicts, truths, cumu_resp] = testModelTimit(gm, trained_dnn, chunk_size);
-% [mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_cipic_8_2600.mat");
-% disp("mae");
-% disp(mae);
-% figure;
-% confusionchart(azimuth_truths, azimuth_predicts);
+[mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
+disp("mae");
+disp(mae);
+figure;
+confusionchart(azimuth_truths, azimuth_predicts);
 
 % disp(rms(truths, predicts));
 % disp('chunk_mae');

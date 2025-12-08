@@ -193,6 +193,7 @@ for i = 1:10
         disp("skip " + s);
         continue
     end
+    disp(s);
     gm = initGassom([10, 10], 5e4, 10, "cipic", s);
     generateGassomTrainSamples(gm, "cipic", s);
 
