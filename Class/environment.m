@@ -140,7 +140,7 @@ classdef environment < handle
             y_all = this.timit_train{param.audio_idx(ind),1};
             y = y_all(param.audio_bgn(ind,1)+(1:param.audio_len));
             bi = this.sofa.spatMono(y,this.locs_list(:,param.locs_rand(ind)),param.hrtf,param.subject);
-            gfb = gammatoneFilterBank([100 22000],128,44100);
+            gfb = gammatoneFilterBank([100 20000],128,44100);
             gmtL = gfb(bi(:,2));
             gmtR = gfb(bi(:,1));
 
@@ -374,7 +374,7 @@ classdef environment < handle
             X = cell(sample_size, 2);
             Y = cell(sample_size, 1);
 
-            gfb = gammatoneFilterBank([100 22000],128,44100);
+            gfb = gammatoneFilterBank([100 20000],128,44100);
             patchLength = floor(this.fs * 8 / 1000);
             patchStride = floor(this.fs * 4 / 1000);
 

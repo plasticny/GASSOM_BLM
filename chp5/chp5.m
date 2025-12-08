@@ -1,3 +1,128 @@
+map_width = 10;
+chunk_size = 10;
+
+% save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
+% save_folder = "chp4/vecnorm/waveform/16x16_16ms/";
+
+% gm = loadGassom([10, 10], 5e4, save_folder + "gsm.mat", 10, "kemar", 0);
+% gm = loadWaveformGassom([16, 16], 5e4, save_folder + "gsm.mat", 16 / 1000);
+% trained_dnn = load(save_folder + "dnn_1000_4000_lr_scheme.mat").trained_dnn;
+
+generateTestSet(gm, 250, 1/6);
+generateTestSet(gm, 2000, 1/6);
+generateTestSet(gm, 4000, 1/6);
+generateTestSet(gm, 250, 1/3);
+generateTestSet(gm, 2000, 1/3);
+generateTestSet(gm, 4000, 1/3);
+generateTestSet(gm, 250, 1);
+generateTestSet(gm, 2000, 1);
+generateTestSet(gm, 4000, 1);
+generateTestSet(gm, 250, 2);
+generateTestSet(gm, 2000, 2);
+generateTestSet(gm, 4000, 2);
+% visualizeFilteredStimuli(gm);
+
+%%%
+% cochleagram
+%%%
+% [predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_6.mat");
+% [predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_6.mat");
+% [predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_6.mat");
+% [predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_3.mat");
+% [predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_3.mat");
+% [predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_3.mat");
+% [predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
+% [predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1.mat");
+% [predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1.mat");
+% [predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
+% [predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_2.mat");
+% [predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_2.mat");
+
+%%%
+% waveform
+%%%
+% [predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSetWaveform(gm, trained_dnn, 250, 1/6, 16 / 1000);
+% [predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSetWaveform(gm, trained_dnn, 2000, 1/6, 16 / 1000);
+% [predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSetWaveform(gm, trained_dnn, 4000, 1/6, 16 / 1000);
+% [predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSetWaveform(gm, trained_dnn, 250, 1/3, 16 / 1000);
+% [predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSetWaveform(gm, trained_dnn, 2000, 1/3, 16 / 1000);
+% [predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSetWaveform(gm, trained_dnn, 4000, 1/3, 16 / 1000);
+% [predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSetWaveform(gm, trained_dnn, 250, 1, 16 / 1000);
+% [predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSetWaveform(gm, trained_dnn, 2000, 1, 16 / 1000);
+% [predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSetWaveform(gm, trained_dnn, 4000, 1, 16 / 1000);
+% [predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSetWaveform(gm, trained_dnn, 250, 2, 16 / 1000);
+% [predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSetWaveform(gm, trained_dnn, 2000, 2, 16 / 1000);
+% [predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSetWaveform(gm, trained_dnn, 4000, 2, 16 / 1000);
+
+% result_save_folder = "chp5/result/combine/";
+
+%%%
+% load saved result
+%%%
+% rms_data = load(result_save_folder + "rms.mat");
+% rms_field_names = fieldnames(rms_data);
+% for i  = 1:numel(rms_field_names)
+%     eval(rms_field_names{i} + " = rms_data." + rms_field_names{i} + ";");
+% end
+
+% predicts_data = load(result_save_folder + "predicts.mat");
+% predicts_field_names = fieldnames(predicts_data);
+% for i = 1:numel(predicts_field_names)
+%     eval(predicts_field_names{i} + " = predicts_data." + predicts_field_names{i} + ";");
+% end
+% truths_data = load(result_save_folder + "truths.mat");
+
+% plots
+
+rms_data = [
+    rms_250_1_6, rms_2000_1_6, rms_4000_1_6;
+    rms_250_1_3, rms_2000_1_3, rms_4000_1_3;
+    rms_250_1, rms_2000_1, rms_4000_1;
+    rms_250_2, rms_2000_2, rms_4000_2
+];
+figure;
+bar(rms_data, "grouped");
+title("Result of DNN trained with timit")
+ylabel("RMS/deg");
+xlabel("Bandwidth/octave")
+xticklabels(["1/6" "1/3" "1" "2"])
+legend({"CF:250Hz", "CF:2000Hz", "CF:4000Hz"});
+
+% figure;
+% confusionchart(truths_250_2, predicts_250_2);
+% title("CF: 250Hz; bandwidth: 2 octave")
+% figure;
+% confusionchart(truths_2000_2, predicts_2000_2);
+% title("CF: 2000Hz; bandwidth: 2 octave")
+% figure;
+% confusionchart(truths_4000_2, predicts_4000_2);
+% title("CF: 4000Hz; bandwidth: 2 octave")
+
+% save( ...
+%     result_save_folder + "rms.mat", ...
+%     "rms_250_1_6", "rms_250_1_3", "rms_250_1", "rms_250_2", ...
+%     "rms_2000_1_6", "rms_2000_1_3", "rms_2000_1", "rms_2000_2", ...
+%     "rms_4000_1_6", "rms_4000_1_3", "rms_4000_1", "rms_4000_2" ...
+% )
+% save( ...
+%     result_save_folder + "predicts.mat", ...
+%     "predicts_250_1_6", "predicts_250_1_6", "predicts_250_1", "predicts_250_2", ...
+%     "predicts_2000_1_6", "predicts_2000_1_3", "predicts_2000_1", "predicts_2000_2", ...
+%     "predicts_4000_1_6", "predicts_4000_1_3", "predicts_4000_1", "predicts_4000_2" ...
+% )
+% save( ...
+%     result_save_folder + "truths.mat", ...
+%     "truths_250_1_6", "truths_250_1_6", "truths_250_1", "truths_250_2", ...
+%     "truths_2000_1_6", "truths_2000_1_3", "truths_2000_1", "truths_2000_2", ...
+%     "truths_4000_1_6", "truths_4000_1_3", "truths_4000_1", "truths_4000_2" ...
+% )
+% save( ...
+%     result_save_folder + "responses.mat", ...
+%     "resp_250_1_6", "resp_250_1_6", "resp_250_1", "resp_250_2", ...
+%     "resp_2000_1_6", "resp_2000_1_3", "resp_2000_1", "resp_2000_2", ...
+%     "resp_4000_1_6", "resp_4000_1_3", "resp_4000_1", "resp_4000_2" ...
+% )
+
 function [gm] = loadGassom (topo_space, max_iter, gsm_path, chunk_size, hrtf_database, hrtf_subject)
     rng(49);
 
@@ -46,10 +171,10 @@ function [y] = filterStimuli (y, fs, cf, bw_oct)
     y = filter(hf, y);
 end
 
-function generateTestSetting (gm, dur)
+function generateTestGwn (gm)
     gwn_seed = gm.netTestParam.gwn_seed;
     sample_size = gm.locs_num * 100;
-    audio_len = round(dur * gm.env.fs);
+    audio_len = round(200e-3 * gm.env.fs);
     fs = gm.env.fs;
     locs_list = gm.locs_list;
 
@@ -66,7 +191,48 @@ function generateTestSetting (gm, dur)
         tpb(i_iter);
     end
 
-    save("chp5/cache/testSettings_" + dur + ".mat", "X", "Y");
+    save("chp5/cache/testSettings.mat", "X", "Y");
+end
+
+function generateTestSet (gm, cf, bw_oct)
+    gwn = load("chp5/cache/testSettings.mat");
+    gwnX = gwn.X;
+    testX = cell(sample_size, 2);
+    testY = gwn.Y;
+    testSize = length(testY);
+
+    gfb = gammatoneFilterBank([100 20000],128,44100);
+    patchLength = floor(44100 * 8 / 1000);
+    patchStride = floor(44100 * 4 / 1000);
+
+    tpb = textprogressbar(testSize, 'showremtime', true);
+    for i = 1:testSize
+        gwn = gwnX{i};
+        gt_loc_idx = testY{i};
+        
+        % filter the gwn and spatalize
+        gwn = filterStimuli(gwn, gm.env.fs, cf, bw_oct);
+        loc = gm.locs_list(:, gt_loc_idx);
+        bi = gm.env.sofa.spatMono(gwn, loc, "kemar", 0);
+
+        gmtL = gfb(bi(:,2));
+        gmtR = gfb(bi(:,1));
+        frmL = []; frmR = [];
+        for j=0:patchStride:length(bi)-patchLength
+            pL = pow2db(sum(gmtL(j+(1:patchLength),:).^2));
+            pR = pow2db(sum(gmtR(j+(1:patchLength),:).^2));
+            frmL = [frmL;pL]; frmR = [frmR;pR];
+        end
+        frmL = frmL';
+        frmR = frmR';
+
+        testX{i}{1} = frmL;
+        testX{i}{2} = frmR;
+
+        tpb(i);
+    end
+
+    save("cache/dnnTestGwn_kemar_0_1900_bandpass_cf" + cf + "_" + bw_oct + ".mat", "testX", "testY");
 end
 
 % function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, dataset_path)
@@ -87,10 +253,6 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, c
     truths = zeros(testSize, 1);
     cumu_resp = zeros(gm.locs_num, prod(gm.topo_space));
 
-    % gfb = gammatoneFilterBank([100 22000],128,44100);
-    % patchLength = floor(this.fs * 8 / 1000);
-    % patchStride = floor(this.fs * 4 / 1000);
-
     tpb = textprogressbar(testSize, 'showremtime', true);
     for i = 1:testSize
         gwn = testX{i};
@@ -101,17 +263,6 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, c
         loc = gm.locs_list(:, gt_loc_idx);
 
         bi = gm.env.sofa.spatMono(gwn, loc, "kemar", 0);
-
-        % gmtL = gfb(bi(:,2));
-        % gmtR = gfb(bi(:,1));
-        % frmL = []; frmR = [];
-        % for j=0:patchStride:length(bi)-patchLength
-        %     pL = pow2db(sum(gmtL(j+(1:patchLength),:).^2));
-        %     pR = pow2db(sum(gmtR(j+(1:patchLength),:).^2));
-        %     frmL = [frmL;pL]; frmR = [frmR;pR];
-        % end
-        % frmL = frmL';
-        % frmR = frmR';
 
         frmL = audio2cochlIOSR(...
             bi(:,2), ...
@@ -278,144 +429,3 @@ function visualizeFilteredStimuli (gm)
     subplot(4,3,12);
     plot(filterStimuli(y, gm.env.fs, 4000, 2));
 end
-
-map_width = 10;
-chunk_size = 10;
-
-% save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
-% save_folder = "chp4/vecnorm/waveform/16x16_16ms/";
-
-% gm = loadGassom([10, 10], 5e4, save_folder + "gsm.mat", 10, "kemar", 0);
-% gm = loadWaveformGassom([16, 16], 5e4, save_folder + "gsm.mat", 16 / 1000);
-% trained_dnn = load(save_folder + "dnn_1000_4000_lr_scheme.mat").trained_dnn;
-
-% generateTestSetting(gm, 25 / 1000);
-% generateTestSetting(gm, 150 / 1000);
-% generateTestSetting(gm, 400 / 1000);
-% visualizeFilteredStimuli(gm);
-
-% center_freqs = [250 2000 4000];
-% bandwidths = [1/6 1/3 1 2];
-% for cf = center_freqs
-%     for bw = bandwidths
-%         save_folder = "chp5/result/" + cf + "_" + bw;
-%         if ~exist(save_folder,'dir')
-%             mkdir(save_folder);
-%         end
-        % predictTestSet(gm, trained_dnn, cf, bw, save_folder);
-%     end
-% end
-% [~,~,cumu_resp,err] = predictTestSet(gm, trained_dnn, 250, 1/6);
-
-%%%
-% cochleagram
-%%%
-% [predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_6.mat");
-% [predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_6.mat");
-% [predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_6.mat");
-% [predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_3.mat");
-% [predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_3.mat");
-% [predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_3.mat");
-% [predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
-% [predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1.mat");
-% [predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1.mat");
-% [predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
-% [predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_2.mat");
-% [predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_2.mat");
-[predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, 250, 1/6);
-[predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, 2000, 1/6);
-[predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, 4000, 1/6);
-[predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, 250, 1/3);
-[predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, 2000, 1/3);
-[predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, 4000, 1/3);
-[predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, 250, 1);
-[predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, 2000, 1);
-[predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, 4000, 1);
-[predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, 250, 2);
-[predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, 2000, 2);
-[predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, 4000, 2);
-
-%%%
-% waveform
-%%%
-% [predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSetWaveform(gm, trained_dnn, 250, 1/6, 16 / 1000);
-% [predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSetWaveform(gm, trained_dnn, 2000, 1/6, 16 / 1000);
-% [predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSetWaveform(gm, trained_dnn, 4000, 1/6, 16 / 1000);
-% [predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSetWaveform(gm, trained_dnn, 250, 1/3, 16 / 1000);
-% [predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSetWaveform(gm, trained_dnn, 2000, 1/3, 16 / 1000);
-% [predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSetWaveform(gm, trained_dnn, 4000, 1/3, 16 / 1000);
-% [predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSetWaveform(gm, trained_dnn, 250, 1, 16 / 1000);
-% [predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSetWaveform(gm, trained_dnn, 2000, 1, 16 / 1000);
-% [predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSetWaveform(gm, trained_dnn, 4000, 1, 16 / 1000);
-% [predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSetWaveform(gm, trained_dnn, 250, 2, 16 / 1000);
-% [predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSetWaveform(gm, trained_dnn, 2000, 2, 16 / 1000);
-% [predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSetWaveform(gm, trained_dnn, 4000, 2, 16 / 1000);
-
-% result_save_folder = "chp5/result/combine/";
-
-%%%
-% load saved result
-%%%
-% rms_data = load(result_save_folder + "rms.mat");
-% rms_field_names = fieldnames(rms_data);
-% for i  = 1:numel(rms_field_names)
-%     eval(rms_field_names{i} + " = rms_data." + rms_field_names{i} + ";");
-% end
-
-% predicts_data = load(result_save_folder + "predicts.mat");
-% predicts_field_names = fieldnames(predicts_data);
-% for i = 1:numel(predicts_field_names)
-%     eval(predicts_field_names{i} + " = predicts_data." + predicts_field_names{i} + ";");
-% end
-% truths_data = load(result_save_folder + "truths.mat");
-
-% plots
-
-rms_data = [
-    rms_250_1_6, rms_2000_1_6, rms_4000_1_6;
-    rms_250_1_3, rms_2000_1_3, rms_4000_1_3;
-    rms_250_1, rms_2000_1, rms_4000_1;
-    rms_250_2, rms_2000_2, rms_4000_2
-];
-figure;
-bar(rms_data, "grouped");
-title("Result of DNN trained with timit")
-ylabel("RMS/deg");
-xlabel("Bandwidth/octave")
-xticklabels(["1/6" "1/3" "1" "2"])
-legend({"CF:250Hz", "CF:2000Hz", "CF:4000Hz"});
-
-% figure;
-% confusionchart(truths_250_2, predicts_250_2);
-% title("CF: 250Hz; bandwidth: 2 octave")
-% figure;
-% confusionchart(truths_2000_2, predicts_2000_2);
-% title("CF: 2000Hz; bandwidth: 2 octave")
-% figure;
-% confusionchart(truths_4000_2, predicts_4000_2);
-% title("CF: 4000Hz; bandwidth: 2 octave")
-
-% save( ...
-%     result_save_folder + "rms.mat", ...
-%     "rms_250_1_6", "rms_250_1_3", "rms_250_1", "rms_250_2", ...
-%     "rms_2000_1_6", "rms_2000_1_3", "rms_2000_1", "rms_2000_2", ...
-%     "rms_4000_1_6", "rms_4000_1_3", "rms_4000_1", "rms_4000_2" ...
-% )
-% save( ...
-%     result_save_folder + "predicts.mat", ...
-%     "predicts_250_1_6", "predicts_250_1_6", "predicts_250_1", "predicts_250_2", ...
-%     "predicts_2000_1_6", "predicts_2000_1_3", "predicts_2000_1", "predicts_2000_2", ...
-%     "predicts_4000_1_6", "predicts_4000_1_3", "predicts_4000_1", "predicts_4000_2" ...
-% )
-% save( ...
-%     result_save_folder + "truths.mat", ...
-%     "truths_250_1_6", "truths_250_1_6", "truths_250_1", "truths_250_2", ...
-%     "truths_2000_1_6", "truths_2000_1_3", "truths_2000_1", "truths_2000_2", ...
-%     "truths_4000_1_6", "truths_4000_1_3", "truths_4000_1", "truths_4000_2" ...
-% )
-% save( ...
-%     result_save_folder + "responses.mat", ...
-%     "resp_250_1_6", "resp_250_1_6", "resp_250_1", "resp_250_2", ...
-%     "resp_2000_1_6", "resp_2000_1_3", "resp_2000_1", "resp_2000_2", ...
-%     "resp_4000_1_6", "resp_4000_1_3", "resp_4000_1", "resp_4000_2" ...
-% )
