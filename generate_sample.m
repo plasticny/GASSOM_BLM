@@ -4,8 +4,8 @@ gm = initGassom([10, 10], 5e4, 10, "kemar", 0);
 % gm = loadGassom([10, 10], 5e4, "chp4/cipic/cochleagram/10x10_10/gsm.mat", 10, "cipic", 9);
 % gm = loadWaveformGassom([16 16], 5e4, "chp4/vecnorm/waveform/16x16_16ms/gsm.mat", 16 / 1000, "kemar", 0);
 % [trainX, trainY] = generateGassomTrainSamples(gm, "kemar", 0);
-[trainX, trainY] = generateDnnTrainSamples(gm, "kemar", 0, true, 250 / (2 ^ (1)), 250 * (2 ^ (1)));
-[testX, testY] = generateDnnTestSamples(gm, "kemar", 0, false);
+% [trainX, trainY] = generateDnnTrainSamples(gm, "kemar", 0, false, 250 / (2 ^ (1)), 250 * (2 ^ (1)));
+% [testX, testY] = generateDnnTestSamples(gm, "kemar", 0, false);
 % [testX, testY] = generateDnnWaveformTestSampless(gm, "kemar", 0, true, 125, 500);
 % generateDnnTrainSamplesTimit(gm);
 
@@ -135,7 +135,7 @@ function [trainX, trainY] = generateGassomTrainSamples (gm, hrtf, hrtf_subject)
         tpd(i);
     end
 
-    save("cache/somTrainSamples_" + gm.somTrainParam.hrtf + "_" + gm.somTrainParam.subject + "_26_" + sampleSize + ".mat", "trainX", "trainY", "-v7.3");
+    save("cache/somTrainSamples_" + gm.somTrainParam.hrtf + "_" + gm.somTrainParam.subject + "_" + sampleSize + ".mat", "trainX", "trainY", "-v7.3");
 end
 
 function [trainX, trainY] = generateDnnTrainSamples (...
@@ -228,8 +228,4 @@ function [testX, testY] = generateDnnWaveformTestSampless ( ...
         );
         save("cache/dnnTestGwnWF_" + hrtf + "_" + hrtf_subject + "_" + length(testY) + ".mat", "testX", "testY");
     end
-end
-
-function generateYostTestSample (gm, lb, ub, dur)
-
 end

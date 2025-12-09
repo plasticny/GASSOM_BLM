@@ -1,3 +1,63 @@
+hrtf_database = "kemar";
+hrtf_subject = 0;
+map_width = 10;
+chunk_size = 10;
+
+% save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
+% save_folder = "/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/chp4/cipic_360/cochleagram/10x10_10/8/";
+save_folder = "chp4/kemar_online/";
+
+% if ~exist(save_folder,'dir') mkdir(save_folder); end
+
+%%% train gassom
+gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
+% gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
+winners = gm.trainGASSOM_cochleagram2(chunk_size, "cache/somTrainSamples_kemar_0_19_50000.mat", save_folder);
+% gsm = gm.gsm{1};
+% save(save_folder + "gsm.mat", "gsm");
+visualizeCochlMap(gm, chunk_size);
+    
+% checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
+% checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
+
+%%% calculate BMT
+% norm_winners = load("chp4_result/10x10_sz5_sf1/norm_winners.mat").norm_winners;
+% norm_winners = (winners.*100)./gm.max_iter;
+% disp(std(norm_winners));
+% save(save_folder + "winners.mat", "winners");
+% save(save_folder + "norm_winners.mat", "norm_winners");
+% visualizeBMT(norm_winners, save_folder);
+
+%%% train dnn
+% generateDnnSamples(gm);
+% [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_9_2600_bandpass_all_cf_bw.mat");
+% [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_kemar_0_1900.mat");
+% trained_dnn = trainDNNTimit(gm, chunk_size, "cache/dnnTrainTimit_cipic_9_2600.mat");
+% save(save_folder + "dnn.mat", "trained_dnn");
+% save(save_folder + "dnn_train_info.mat", "train_info");
+
+%%% test model
+% trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
+% [mae, predicts, truths, cumu_resp] = testModelTimit(gm, trained_dnn, chunk_size);
+% [mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
+% disp("mae");
+% disp(mae);
+% figure;
+% confusionchart(azimuth_truths, azimuth_predicts);
+
+% disp(rms(truths, predicts));
+% disp('chunk_mae');
+% disp(chunk_mae);
+% save(save_folder + "mae.mat", "mae");
+% save(save_folder + "chunk_mae.mat", "chunk_mae");
+% save(save_folder + "azimuth_predicts.mat", "azimuth_predicts");
+% save(save_folder + "azimuth_truths.mat", "azimuth_truths");
+% save(save_folder + "cumu_resp.mat", "cumu_resp");
+
+% cumu_resp = load(save_folder + "cumu_resp.mat").cumu_resp;
+% visualizeRespHeatMap(cumu_resp, map_width, chunk_size, save_folder);
+
+
 function [gm] = initGassom (topo_space, max_iter, chunk_size, hrtf_database, hrtf_subject)
     rng(49);
 
@@ -46,7 +106,6 @@ function [trained_dnn, train_info] = trainDNN (gm, chunk_size, dataset)
         %     % single_len = size(chkL,1);
         %     % rm = normalize([chkL;chkR]);
         %     % rm = [chkL;chkR];
-        %     % rm = rm + abs(min(rm, [], "all"));
         %     % chkL = rm(1:single_len,:);
         %     % chkR = rm(single_len+1:end,:);
 
@@ -73,7 +132,6 @@ function [trained_dnn, train_info] = trainDNN (gm, chunk_size, dataset)
         % single_len = size(chkL,1);
         % rm = normalize([chkL;chkR]);
         % rm = [chkL;chkR];
-        % rm = rm + abs(min(rm, [], "all"));
         % chkL = rm(1:single_len,:);
         % chkR = rm(single_len+1:end,:);
 
@@ -187,7 +245,6 @@ function [mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel (...
 
             % single_len = size(chkL,1);
             % rm = normalize([chkL;chkR]);
-            % rm = rm + abs(min(rm, [], "all"));
             % chkL = rm(1:single_len,:);
             % chkR = rm(single_len+1:end,:);
 
@@ -320,7 +377,6 @@ function [cumu_resp] = checkResponse (gm, chunk_size, dataset_path)
             % single_len = size(chkL, 1);
             % rm = [chkL;chkR];
             % rm = normalize([chkL;chkR]);
-            % rm = rm + abs(min(rm, [], "all"));
             % chkL = rm(1:single_len,:);
             % chkR = rm(single_len+1:end,:);
 
@@ -473,68 +529,3 @@ function [err] = rms (truths, predicts)
     assert(length(truths) == length(predicts));
     err = sqrt(sum((predicts - truths) .^ 2) / length(truths));
 end
-
-hrtf_database = "kemar";
-hrtf_subject = 0;
-map_width = 10;
-chunk_size = 10;
-
-% save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
-% save_folder = "/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/chp4/cipic_360/cochleagram/10x10_10/8/";
-save_folder = "chp4/kemar_online/";
-
-% if ~exist(save_folder,'dir') mkdir(save_folder); end
-
-%%% train gassom
-gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
-% gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
-winners = gm.trainGASSOM_cochleagram2(chunk_size, "cache/somTrainSamples_kemar_0_19_50000.mat", save_folder);
-gsm = gm.gsm{1};
-save(save_folder + "gsm.mat", "gsm");
-visualizeCochlMap(gm, chunk_size);
-    
-% checkResponse(gm, chunk_size, "cache/dnnTestTimit_kemar_0.mat");
-% checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
-% checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
-
-%%% calculate BMT
-% norm_winners = load("chp4_result/10x10_sz5_sf1/norm_winners.mat").norm_winners;
-% norm_winners = (winners.*100)./gm.max_iter;
-% disp(std(norm_winners));
-% save(save_folder + "winners.mat", "winners");
-% save(save_folder + "norm_winners.mat", "norm_winners");
-% visualizeBMT(norm_winners, save_folder);
-
-%%% train dnn
-% generateDnnSamples(gm);
-% [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_9_2600_bandpass_all_cf_bw.mat");
-[trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_kemar_0_1900.mat");
-% trained_dnn = trainDNNTimit(gm, chunk_size, "cache/dnnTrainTimit_cipic_9_2600.mat");
-save(save_folder + "dnn.mat", "trained_dnn");
-% save(save_folder + "dnn_train_info.mat", "train_info");
-
-%%% test model
-% trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
-% [mae, predicts, truths, cumu_resp] = testModelTimit(gm, trained_dnn, chunk_size);
-[mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
-disp("mae");
-disp(mae);
-figure;
-confusionchart(azimuth_truths, azimuth_predicts);
-
-% disp(rms(truths, predicts));
-% disp('chunk_mae');
-% disp(chunk_mae);
-% save(save_folder + "mae.mat", "mae");
-% save(save_folder + "chunk_mae.mat", "chunk_mae");
-% save(save_folder + "azimuth_predicts.mat", "azimuth_predicts");
-% save(save_folder + "azimuth_truths.mat", "azimuth_truths");
-% save(save_folder + "cumu_resp.mat", "cumu_resp");
-
-% cumu_resp = load(save_folder + "cumu_resp.mat").cumu_resp;
-% visualizeRespHeatMap(cumu_resp, map_width, chunk_size, save_folder);
-
-%%% some visualization
-% visualizeHtfs(gm, 1, 45);
-% visualizeGassomTrainingSample(gm, 1);
-% visualizeDnnTrainingSample(gm, 1, chunk_size);

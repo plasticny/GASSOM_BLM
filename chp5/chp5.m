@@ -8,35 +8,35 @@ chunk_size = 10;
 % gm = loadWaveformGassom([16, 16], 5e4, save_folder + "gsm.mat", 16 / 1000);
 % trained_dnn = load(save_folder + "dnn_1000_4000_lr_scheme.mat").trained_dnn;
 
-generateTestSet(gm, 250, 1/6);
-generateTestSet(gm, 2000, 1/6);
-generateTestSet(gm, 4000, 1/6);
-generateTestSet(gm, 250, 1/3);
-generateTestSet(gm, 2000, 1/3);
-generateTestSet(gm, 4000, 1/3);
-generateTestSet(gm, 250, 1);
-generateTestSet(gm, 2000, 1);
-generateTestSet(gm, 4000, 1);
-generateTestSet(gm, 250, 2);
-generateTestSet(gm, 2000, 2);
-generateTestSet(gm, 4000, 2);
+% generateTestSet(gm, 250, 1/6);
+% generateTestSet(gm, 2000, 1/6);
+% generateTestSet(gm, 4000, 1/6);
+% generateTestSet(gm, 250, 1/3);
+% generateTestSet(gm, 2000, 1/3);
+% generateTestSet(gm, 4000, 1/3);
+% generateTestSet(gm, 250, 1);
+% generateTestSet(gm, 2000, 1);
+% generateTestSet(gm, 4000, 1);
+% generateTestSet(gm, 250, 2);
+% generateTestSet(gm, 2000, 2);
+% generateTestSet(gm, 4000, 2);
 % visualizeFilteredStimuli(gm);
 
 %%%
 % cochleagram
 %%%
-% [predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_6.mat");
-% [predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_6.mat");
-% [predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_6.mat");
-% [predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_3.mat");
-% [predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_3.mat");
-% [predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_3.mat");
-% [predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
-% [predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1.mat");
-% [predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1.mat");
-% [predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
-% [predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_2.mat");
-% [predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_2.mat");
+[predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_6.mat");
+[predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_6.mat");
+[predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_6.mat");
+[predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_3.mat");
+[predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_3.mat");
+[predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_3.mat");
+[predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
+[predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1.mat");
+[predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1.mat");
+[predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
+[predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_2.mat");
+[predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_2.mat");
 
 %%%
 % waveform
@@ -197,9 +197,9 @@ end
 function generateTestSet (gm, cf, bw_oct)
     gwn = load("chp5/cache/testSettings.mat");
     gwnX = gwn.X;
-    testX = cell(sample_size, 2);
     testY = gwn.Y;
     testSize = length(testY);
+    testX = cell(testSize, 2);
 
     gfb = gammatoneFilterBank([100 20000],128,44100);
     patchLength = floor(44100 * 8 / 1000);
@@ -235,18 +235,12 @@ function generateTestSet (gm, cf, bw_oct)
     save("cache/dnnTestGwn_kemar_0_1900_bandpass_cf" + cf + "_" + bw_oct + ".mat", "testX", "testY");
 end
 
-% function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, dataset_path)
-function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, cf, bw_oct)
+function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, dataset_path)
     chunk_size = 10;
 
-    % test_data = load(dataset_path);
-    % testX = test_data.testX;
-    % testY = test_data.testY;
-    % testSize = length(testY);
-
-    testSetting = load("chp5/cache/testSettings.mat");
-    testX = testSetting.X;
-    testY = testSetting.Y;
+    test_data = load(dataset_path);
+    testX = test_data.testX;
+    testY = test_data.testY;
     testSize = length(testY);
 
     predicts = zeros(testSize, 1);
@@ -255,27 +249,8 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, c
 
     tpb = textprogressbar(testSize, 'showremtime', true);
     for i = 1:testSize
-        gwn = testX{i};
-        gt_loc_idx = testY{i};
-        
-        % filter the gwn and spatalize
-        gwn = filterStimuli(gwn, gm.env.fs, cf, bw_oct);
-        loc = gm.locs_list(:, gt_loc_idx);
-
-        bi = gm.env.sofa.spatMono(gwn, loc, "kemar", 0);
-
-        frmL = audio2cochlIOSR(...
-            bi(:,2), ...
-            gm.env.fs, 100, 20000, 128, ...
-            8, 4 ...
-        );
-        frmR = audio2cochlIOSR(...
-            bi(:,1), ...
-            gm.env.fs, 100, 20000, 128, ...
-            8, 4 ...
-        );
-        % frmL = testX{i}{1};
-        % frmR = testX{i}{2};
+        frmL = testX{i}{1};
+        frmR = testX{i}{2};
         nFrm = size(frmL, 2);
 
         % get response from gassom
@@ -287,14 +262,12 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, c
 
             % single_len = size(chkL,1);
             % rm = normalize([chkL;chkR]);
-            % rm = rm + abs(min(rm, [], "all"));
             % chkL = rm(1:single_len,:);
             % chkR = rm(single_len+1:end,:);
 
             x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
             x = x-ones(size(x,1),1)*mean(x,1);
             X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
-            % x = x / norm(x);
 
             res = gm.getResponse(X);
 

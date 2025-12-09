@@ -405,7 +405,6 @@ classdef GASSOM_Model < handle
                 %     % single_len = size(chkL,1);
                 %     % rm = normalize([chkL;chkR]);
                 %     % rm = [chkL;chkR];
-                %     % rm = rm + abs(min(rm, [], "all"));
                 %     % chkL = rm(1:single_len,:);
                 %     % chkR = rm(single_len+1:end,:);
 
@@ -427,7 +426,6 @@ classdef GASSOM_Model < handle
 
                 % single_len = size(frmL,1);
                 % rm = normalize([frmL;frmR]);
-                % rm = rm + abs(min(rm, [], "all"));
                 % frmL = rm(1:single_len,:);
                 % frmR = rm(single_len+1:end,:);
 

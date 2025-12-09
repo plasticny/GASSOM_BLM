@@ -1,10 +1,10 @@
-% clc; clear all; addpath(genpath(pwd));
+clc; clear all; addpath(genpath(pwd));
 
-% chp4_cochleagram();
+chp4_cochleagram();
 % chp4_waveform();
 % chp4_wf_result();
 
-chp5();
+% chp5();
 
 % chp6_dendrogram();    
 % chp6_comptation_model();
