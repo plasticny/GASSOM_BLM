@@ -84,8 +84,8 @@ classdef GASSOM_Online_Cochleagram < handle
            
             obj.size_subspace = 2;
             obj.n_basis = obj.size_subspace * obj.n_subspace;
-            obj.alpha_A = 8e-2;   
-            obj.alpha_C = 1e-4; 
+            obj.alpha_A = 8e-4;   
+            obj.alpha_C = 1e-5; 
             obj.tconst = 1000*10;
             obj.sigma_A = 2;
             obj.tconst_n = 5000;
@@ -138,7 +138,7 @@ classdef GASSOM_Online_Cochleagram < handle
             this.Proj = this.coef{1}.^2;
             % this.Proj = this.Proj./max(this.Proj);
 
-            % assert(max(this.Proj, [], "all") <= 1);
+            assert(max(this.Proj, [], "all") <= 1);
             
             Perr = ones(size(this.Proj))-this.Proj;
             emissProb=exp(-this.Proj/(2*this.sigma_w^2)).*exp(-Perr/(2*this.sigma_n^2));      

@@ -1,23 +1,38 @@
-hrtf_database = "kemar";
-hrtf_subject = 0;
+hrtf_database = "cipic";
+hrtf_subject = 8;
 map_width = 10;
 chunk_size = 10;
 
+cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
+for i = 1:10
+    s = cipic_subjects.individual_subjects(i);
+    save_folder = "/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/chp4/cipic_360/cochleagram/10x10_10/" + s + "/";
+
+    % gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, s);
+    % gm.trainGASSOM_cochleagram2(chunk_size, "cache/somTrainSamples_cipic_" + s + "_26_50000.mat", save_folder);
+    % gsm = gm.gsm{1};
+    % save(save_folder + "gsm.mat", "gsm");
+    gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
+
+    [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_" + s + "_2600.mat");
+    save(save_folder + "dnn_batch.mat", "trained_dnn");
+end
+
 % save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
 % save_folder = "/home/nycheung/desktop/shuto_gassom/GASSOM_BLM/chp4/cipic_360/cochleagram/10x10_10/8/";
-save_folder = "chp4/kemar_online/";
+% save_folder = "chp4/kemar_online/";
 
 % if ~exist(save_folder,'dir') mkdir(save_folder); end
 
 %%% train gassom
-gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
+% gm = initGassom([map_width, map_width], 5e4, chunk_size, hrtf_database, hrtf_subject);
 % gm = loadGassom([map_width, map_width], 5e4, save_folder + "gsm.mat", chunk_size, hrtf_database, hrtf_subject);
-winners = gm.trainGASSOM_cochleagram2(chunk_size, "cache/somTrainSamples_kemar_0_19_50000.mat", save_folder);
+% winners = gm.trainGASSOM_cochleagram2(chunk_size, "cache/somTrainSamples_cipic_8_26_50000.mat", save_folder);
 % gsm = gm.gsm{1};
 % save(save_folder + "gsm.mat", "gsm");
-visualizeCochlMap(gm, chunk_size);
+% visualizeCochlMap(gm, chunk_size);
     
-% checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
+% checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
 % checkResponse(gm, chunk_size, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
 
 %%% calculate BMT
@@ -31,7 +46,7 @@ visualizeCochlMap(gm, chunk_size);
 %%% train dnn
 % generateDnnSamples(gm);
 % [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_9_2600_bandpass_all_cf_bw.mat");
-% [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_kemar_0_1900.mat");
+% [trained_dnn, ~] = trainDNN(gm, chunk_size, "cache/dnnTrainGwn_cipic_8_2600.mat");
 % trained_dnn = trainDNNTimit(gm, chunk_size, "cache/dnnTrainTimit_cipic_9_2600.mat");
 % save(save_folder + "dnn.mat", "trained_dnn");
 % save(save_folder + "dnn_train_info.mat", "train_info");
@@ -39,7 +54,7 @@ visualizeCochlMap(gm, chunk_size);
 %%% test model
 % trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
 % [mae, predicts, truths, cumu_resp] = testModelTimit(gm, trained_dnn, chunk_size);
-% [mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_kemar_0_1900.mat");
+% [mae, azimuth_predicts, azimuth_truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_cipic_8_2600.mat");
 % disp("mae");
 % disp(mae);
 % figure;
@@ -83,12 +98,12 @@ function [trained_dnn, train_info] = trainDNN (gm, chunk_size, dataset)
     train_data = load(dataset);
     nFrm = size(train_data.trainX{1}{1}, 2);
     nChk = length(0:1:nFrm-chunk_size);
-    % dnn_x = zeros(gm.netTrainParam.max_iter * nChk, prod(gm.topo_space));
-    % dnn_y = zeros(gm.netTrainParam.max_iter * nChk, 1);
+    dnn_x = zeros(gm.netTrainParam.max_iter * nChk, prod(gm.topo_space));
+    dnn_y = zeros(gm.netTrainParam.max_iter * nChk, 1);
     % samples_size = gm.netTrainParam.max_iter;
     samples_size = length(train_data.trainY);
-    dnn_x = zeros(samples_size, prod(gm.topo_space));
-    dnn_y = zeros(samples_size, 1);
+    % dnn_x = zeros(samples_size, prod(gm.topo_space));
+    % dnn_y = zeros(samples_size, 1);
 
     rng(49);
 
@@ -99,52 +114,52 @@ function [trained_dnn, train_info] = trainDNN (gm, chunk_size, dataset)
         frmL = train_data.trainX{i}{1};
         frmR = train_data.trainX{i}{2};
 
-        % for j = 0:1:nFrm-chunk_size
-        %     chkL = frmL(:,j+(1:chunk_size));
-        %     chkR = frmR(:,j+(1:chunk_size));
+        for j = 0:1:nFrm-chunk_size
+            chkL = frmL(:,j+(1:chunk_size));
+            chkR = frmR(:,j+(1:chunk_size));
 
-        %     % single_len = size(chkL,1);
-        %     % rm = normalize([chkL;chkR]);
-        %     % rm = [chkL;chkR];
-        %     % chkL = rm(1:single_len,:);
-        %     % chkR = rm(single_len+1:end,:);
+            % single_len = size(chkL,1);
+            % rm = normalize([chkL;chkR]);
+            % rm = [chkL;chkR];
+            % chkL = rm(1:single_len,:);
+            % chkR = rm(single_len+1:end,:);
 
-        %     x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
-        %     x = x-ones(size(x,1),1)*mean(x,1);
-        %     X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
-        %     % x = x / norm(x);
+            x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
+            x = normalize(x);
+            X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
+            % x = x / norm(x);
 
-        %     res = gm.getResponse(X);
+            res = gm.getResponse(X);
             
-        %     dnn_x(dnn_i,:) = res';
-        %     dnn_y(dnn_i) = train_data.trainY{i};
-        %     dnn_i = dnn_i + 1;
-        %     % dnn_x = [dnn_x;res'];
-        %     % dnn_y = [dnn_y;train_data.trainY{i}];
-        % end
+            dnn_x(dnn_i,:) = res';
+            dnn_y(dnn_i) = train_data.trainY{i};
+            dnn_i = dnn_i + 1;
+            % dnn_x = [dnn_x;res'];
+            % dnn_y = [dnn_y;train_data.trainY{i}];
+        end
 
-        chkIdx = 0:1:nFrm-chunk_size;
+        % chkIdx = 0:1:nFrm-chunk_size;
         
-        j = chkIdx(randi(length(chkIdx)));
-        chkL = frmL(:,j+(1:chunk_size));
-        chkR = frmR(:,j+(1:chunk_size));
+        % j = chkIdx(randi(length(chkIdx)));
+        % chkL = frmL(:,j+(1:chunk_size));
+        % chkR = frmR(:,j+(1:chunk_size));
 
-        % single_len = size(chkL,1);
-        % rm = normalize([chkL;chkR]);
-        % rm = [chkL;chkR];
-        % chkL = rm(1:single_len,:);
-        % chkR = rm(single_len+1:end,:);
+        % % single_len = size(chkL,1);
+        % % rm = normalize([chkL;chkR]);
+        % % rm = [chkL;chkR];
+        % % chkL = rm(1:single_len,:);
+        % % chkR = rm(single_len+1:end,:);
 
-        x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
-        x = x-ones(size(x,1),1)*mean(x,1);
-        X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
-        % x = x / norm(x);
+        % x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
+        % x = normalize(x);
+        % X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
+        % % x = x / norm(x);
 
-        res = gm.getResponse(X);
-        % res = normalize(res);
+        % res = gm.getResponse(X);
+        % % res = normalize(res);
 
-        dnn_x(i, :) = res;
-        dnn_y(i) = train_data.trainY{i};
+        % dnn_x(i, :) = res;
+        % dnn_y(i) = train_data.trainY{i};
 
         tpb(i);
     end

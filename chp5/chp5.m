@@ -1,5 +1,5 @@
-map_width = 10;
-chunk_size = 10;
+% map_width = 10;
+% chunk_size = 10;
 
 % save_folder = "chp4/cochleagram/result/" + map_width + "x" + map_width + "_sz" + chunk_size + "_sf1/";
 % save_folder = "chp4/vecnorm/waveform/16x16_16ms/";
@@ -25,18 +25,18 @@ chunk_size = 10;
 %%%
 % cochleagram
 %%%
-[predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_6.mat");
-[predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_6.mat");
-[predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_6.mat");
-[predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_3.mat");
-[predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_3.mat");
-[predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_3.mat");
-[predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
-[predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1.mat");
-[predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1.mat");
-[predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
-[predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf2000_2.mat");
-[predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, "cache/dnnTestGwn_kemar_0_1900_bandpass_cf4000_2.mat");
+% [predicts_250_1_6, truths_250_1_6, resp_250_1_6, rms_250_1_6] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_6.mat");
+% [predicts_2000_1_6, truths_2000_1_6, resp_2000_1_6, rms_2000_1_6] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_6.mat");
+% [predicts_4000_1_6, truths_4000_1_6, resp_4000_1_6, rms_4000_1_6] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_6.mat");
+% [predicts_250_1_3, truths_250_1_3, resp_250_1_3, rms_250_1_3] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf250_1_3.mat");
+% [predicts_2000_1_3, truths_2000_1_3, resp_2000_1_3, rms_2000_1_3] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1_3.mat");
+% [predicts_4000_1_3, truths_4000_1_3, resp_4000_1_3, rms_4000_1_3] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1_3.mat");
+[predicts_250_1, truths_250_1, resp_250_1, rms_250_1] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf250_1.mat");
+[predicts_2000_1, truths_2000_1, resp_2000_1, rms_2000_1] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf2000_1.mat");
+[predicts_4000_1, truths_4000_1, resp_4000_1, rms_4000_1] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf4000_1.mat");
+[predicts_250_2, truths_250_2, resp_250_2, rms_250_2] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf250_2.mat");
+[predicts_2000_2, truths_2000_2, resp_2000_2, rms_2000_2] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf2000_2.mat");
+[predicts_4000_2, truths_4000_2, resp_4000_2, rms_4000_2] = predictTestSet(gm, trained_dnn, "cache/toolbox/dnnTestGwn_kemar_0_1900_bandpass_cf4000_2.mat");
 
 %%%
 % waveform
@@ -249,6 +249,8 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, d
 
     tpb = textprogressbar(testSize, 'showremtime', true);
     for i = 1:testSize
+        gt_loc_idx = testY{i};
+
         frmL = testX{i}{1};
         frmR = testX{i}{2};
         nFrm = size(frmL, 2);
@@ -266,7 +268,8 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, d
             % chkR = rm(single_len+1:end,:);
 
             x = [reshape(chkL, [], 1);reshape(chkR, [], 1)];
-            x = x-ones(size(x,1),1)*mean(x,1);
+            % x = x-ones(size(x,1),1)*mean(x,1);
+            x = normalize(x);
             X = bsxfun(@rdivide, x, sqrt(sum(x.^2))+eps); 
 
             res = gm.getResponse(X);
@@ -291,6 +294,7 @@ function [predicts, truths, cumu_resp, err] = predictTestSet (gm, trained_dnn, d
     end
 
     err = rms(truths, predicts);
+    disp(err);
 end
 
 function [predicts, truths, cumu_resp, err] = predictTestSetWaveform (...

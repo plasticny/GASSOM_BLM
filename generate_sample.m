@@ -1,6 +1,7 @@
 clc; clear all; addpath(genpath(pwd));
 
-gm = initGassom([10, 10], 5e4, 10, "kemar", 0);
+gm = initGassom([10, 10], 5e4, 10, "cipic", 8);
+generateDnnTrainSamples(gm, "cipic", 8, false);
 % gm = loadGassom([10, 10], 5e4, "chp4/cipic/cochleagram/10x10_10/gsm.mat", 10, "cipic", 9);
 % gm = loadWaveformGassom([16 16], 5e4, "chp4/vecnorm/waveform/16x16_16ms/gsm.mat", 16 / 1000, "kemar", 0);
 % [trainX, trainY] = generateGassomTrainSamples(gm, "kemar", 0);
@@ -45,19 +46,19 @@ gm = initGassom([10, 10], 5e4, 10, "kemar", 0);
 % for i = 1:10
 %     s = cipic_subjects.individual_subjects(i);
 %     if exist("cache/somTrainSamples_cipic_" + s + "_26_50000.mat", "file")
-%         disp("skip " + s);
-%         continue
+%         disp("skip individual " + s);
+%     else
+%         disp("generating individual " + s);
+%         gm = initGassom([10, 10], 5e4, 10, "cipic", s);
+%         assert(gm.locs_num == 26);
+%         generateGassomTrainSamples(gm, "cipic", s);
+%         generateDnnTrainSamples(gm, "cipic", s, false);
 %     end
-%     disp("generating individual " + s);
-%     gm = initGassom([10, 10], 5e4, 10, "cipic", s);
-%     assert(gm.locs_num == 26);
-%     generateGassomTrainSamples(gm, "cipic", s);
-%     generateDnnTrainSamples(gm, "cipic", s, false);
 
 %     for j = 1:10
 %         s = cipic_subjects.non_individual_subjects(i,j);
 %         if exist("cache/dnnTestGwn_cipic_" + s + "_2600.mat", "file")
-%             disp("skip " + s);
+%             disp("skip non-individual " + s);
 %             continue
 %         end
 %         disp("generating non-individual " + s);
@@ -128,14 +129,15 @@ function [trainX, trainY] = generateGassomTrainSamples (gm, hrtf, hrtf_subject)
     
     tpd = textprogressbar(sampleSize, "showremtime", true);
     for i = 1:sampleSize
-        [frmL, frmR, ~] = gm.env.genOneEpisodeCoch2(gm.somTrainParam, i);
+        % [frmL, frmR, ~] = gm.env.genOneEpisodeCoch2(gm.somTrainParam, i);
+        [frmL, frmR, ~] = gm.env.genOneTrainEpisodeCochIOSR(gm.somTrainParam, i);
         trainX{i}{1} = frmL;
         trainX{i}{2} = frmR;
         trainY{i} = gm.somTrainParam.locs_rand(i);
         tpd(i);
     end
 
-    save("cache/somTrainSamples_" + gm.somTrainParam.hrtf + "_" + gm.somTrainParam.subject + "_" + sampleSize + ".mat", "trainX", "trainY", "-v7.3");
+    save("cache/somTrainSamples_" + gm.somTrainParam.hrtf + "_" + gm.somTrainParam.subject + "_26_" + sampleSize + ".mat", "trainX", "trainY", "-v7.3");
 end
 
 function [trainX, trainY] = generateDnnTrainSamples (...
@@ -143,7 +145,7 @@ function [trainX, trainY] = generateDnnTrainSamples (...
     do_bandpass, lb, ub ...
 )
     if do_bandpass
-        [trainX, trainY] = gm.env.genGwnToolbox(...
+        [trainX, trainY] = gm.env.genGwnIosr(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTrainParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -152,7 +154,7 @@ function [trainX, trainY] = generateDnnTrainSamples (...
         );
         save("cache/dnnTrainGwn_" + hrtf + "_" + hrtf_subject + "_" + length(trainY) + "_bandpass_" + lb + "_" + ub + ".mat", "trainX", "trainY");
     else
-        [trainX, trainY] = gm.env.genGwnToolbox(...
+        [trainX, trainY] = gm.env.genGwnIosr(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTrainParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -185,7 +187,7 @@ function [testX, testY] = generateDnnTestSamples ( ...
     do_bandpass, lb, ub ...
 )
     if do_bandpass
-        [testX, testY] = gm.env.genGwnToolbox(...
+        [testX, testY] = gm.env.genGwnIosr(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTestParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...
@@ -194,7 +196,7 @@ function [testX, testY] = generateDnnTestSamples ( ...
         );
         save("cache/dnnTestGwn_" + hrtf + "_" + hrtf_subject + "_" + length(testY) + "_bandpass_" + lb + "_" + ub + ".mat", "testX", "testY");
     else
-        [testX, testY] = gm.env.genGwnToolbox(...
+        [testX, testY] = gm.env.genGwnIosr(...
             gm.locs_list, gm.locs_num * 100, ...
             gm.netTestParam.audio_len, gm.env.fs, ...
             hrtf, hrtf_subject, ...

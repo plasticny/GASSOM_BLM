@@ -1,3 +1,62 @@
+clc; clear all; addpath(genpath(pwd));
+
+map_size = 10;
+chunk_size = 10;
+cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
+
+% % i_errs = [];
+% % ni_errs = [];
+for computation_subject_idx = 1:10
+    % computation_subject_idx = 1;
+    % computation_subject = computation_subjects(computation_subject_idx);
+    computation_subject = cipic_subjects.individual_subjects(computation_subject_idx);
+
+    disp("run wenzel on subject " + computation_subject);
+
+    save_folder = "chp4/cipic_360/cochleagram/10x10_10/" + computation_subject + "/";
+    gm = loadGassom([map_size, map_size], 5e4, save_folder + "gsm.mat", chunk_size, "cipic", computation_subject);
+    trained_dnn = load(save_folder + "dnn_batch.mat").trained_dnn;
+
+    [predicts, truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_cipic_" + computation_subject + "_2600.mat");
+    [i_errs, cm] = rms(truths, predicts);
+    % figure;
+    % bar([
+    %     -170, -160, -150, -140, -125, ...
+    %     -100, -80, -55, -40, -30, ...
+    %     -20, -10, 0, 10, 20, ...
+    %     30, 40, 55, 80, 100, ...
+    %     125, 140, 150, 160, 170, 180], ...
+    %     errs ...
+    % );
+    % ylim([-5 180]);
+    % xlabel("Target Azimuth/deg");
+    % ylabel("RMS/deg");
+
+    ni_errs = [];
+    for test_subject = cipic_subjects.non_individual_subjects(computation_subject_idx,:)
+        disp(test_subject);
+        [predicts, truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_cipic_" + test_subject + "_2600.mat");
+        [errs, cm] = rms(truths, predicts);
+        % figure;               
+        % bar([
+        %     -170, -160, -150, -140, -125, ...
+        %     -100, -80, -55, -40, -30, ...
+        %     -20, -10, 0, 10, 20, ...
+        %     30, 40, 55, 80, 100, ...
+        %     125, 140, 150, 160, 170, 180], ...
+        %     errs ...
+        % );
+        % ylim([-5 180]);
+        % xlabel("Target Azimuth/deg");
+        % ylabel("RMS/deg");
+        ni_errs = [ni_errs, errs];
+    end
+
+    save(save_folder + "wenzel_result_batch.mat", "ni_errs", "i_errs");
+end
+
+plot_result()
+
 function [gm] = loadGassom (topo_space, max_iter, gsm_path, chunk_size, hrtf_database, hrtf_subject)
     rng(49);
 
@@ -117,66 +176,24 @@ function [errs, cm] = rms (truths, predicts)
     end
 end
 
-clc; clear all; addpath(genpath(pwd));
+function plot_result ()
+    cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
 
-map_size = 10;
-chunk_size = 10;
-cipic_subjects = load("wenzel_cipic_subject/wenzel_cipic_subject.mat");
-
-i_errs = [];
-ni_errs = [];
-for computation_subject_idx = 1:2
-    % computation_subject_idx = 1;
-    % computation_subject = computation_subjects(computation_subject_idx);
-    computation_subject = cipic_subjects.individual_subjects(computation_subject_idx);
-
-    disp("run wenzel on subject " + computation_subject);
-
-    save_folder = "chp4/cipic_360/cochleagram/10x10_10/" + computation_subject + "/";
-    gm = loadGassom([map_size, map_size], 5e4, save_folder + "gsm.mat", chunk_size, "cipic", computation_subject);
-    trained_dnn = load(save_folder + "dnn.mat").trained_dnn;
-
-    [predicts, truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_cipic_" + computation_subject + "_2600.mat");
-    [errs, cm] = rms(truths, predicts);
-    i_errs = [i_errs, errs];
-    % figure;
-    % bar([
-    %     -170, -160, -150, -140, -125, ...
-    %     -100, -80, -55, -40, -30, ...
-    %     -20, -10, 0, 10, 20, ...
-    %     30, 40, 55, 80, 100, ...
-    %     125, 140, 150, 160, 170, 180], ...
-    %     errs ...
-    % );
-    % ylim([-5 180]);
-    % xlabel("Target Azimuth/deg");
-    % ylabel("RMS/deg");
-
-    for test_subject = cipic_subjects.non_individual_subjects(computation_subject_idx,:)
-        disp(test_subject);
-        [predicts, truths, cumu_resp] = testModel(gm, trained_dnn, chunk_size, "cache/dnnTestGwn_cipic_" + test_subject + "_2600.mat");
-        [errs, cm] = rms(truths, predicts);
-        % figure;               
-        % bar([
-        %     -170, -160, -150, -140, -125, ...
-        %     -100, -80, -55, -40, -30, ...
-        %     -20, -10, 0, 10, 20, ...
-        %     30, 40, 55, 80, 100, ...
-        %     125, 140, 150, 160, 170, 180], ...
-        %     errs ...
-        % );
-        % ylim([-5 180]);
-        % xlabel("Target Azimuth/deg");
-        % ylabel("RMS/deg");
-        ni_errs = [ni_errs, mean(errs, 2)];
+    i_errs = [];
+    ni_errs = [];
+    for computation_subject_idx = 1:10
+        computation_subject = cipic_subjects.individual_subjects(computation_subject_idx);
+        data = load("chp4/cipic_360/cochleagram/10x10_10/" + computation_subject + "/wenzel_result_batch.mat");
+        i_errs = [i_errs, data.i_errs];
+        ni_errs = [ni_errs, mean(data.ni_errs, 2)];
     end
-end
 
-figure;
-boxplot(i_errs');
-ylim([-5, 180]);
-figure;
-boxplot(ni_errs');
-ylim([-5, 180]);
-hold on;
-plot(mean(ni_errs, 2));
+    figure;
+    boxplot(i_errs');
+    ylim([-5, 180]);
+    figure;
+    boxplot(ni_errs');
+    ylim([-5, 180]);
+    hold on;
+    plot(mean(ni_errs, 2));
+end
